@@ -18,12 +18,15 @@ PageWifi::PageWifi(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manager)
 }
 
 void PageWifi::onEnter() {
+    _tft->setTextColor(TFT_WHITE, TFT_BLACK);
     _tft->drawString("WiFi Setup", SCREEN_WIDTH/2, 15, 4);
     
     // Draw Reset
     _tft->fillRect(btnReset.x, btnReset.y, btnReset.w, btnReset.h, btnReset.color);
     _tft->drawRect(btnReset.x, btnReset.y, btnReset.w, btnReset.h, TFT_WHITE);
+    _tft->setTextColor(TFT_WHITE, btnReset.color);
     _tft->drawString(btnReset.label, btnReset.x + (btnReset.w/2), btnReset.y + (btnReset.h/2), 2);
+    _tft->setTextColor(TFT_WHITE, TFT_BLACK);
     
     if (config.wifiPass.length() > 0 && config.wifiSSID.length() > 0) {
         _state = CONNECTING;
@@ -77,15 +80,18 @@ void PageWifi::drawNetworks() {
         networkButtons.push_back({40, yPos, 400, 45, ssid, TFT_DARKCYAN});
         
         _tft->fillRect(40, yPos, 400, 45, TFT_DARKCYAN);
+        _tft->setTextColor(TFT_WHITE, TFT_DARKCYAN);
         _tft->drawString(ssid, SCREEN_WIDTH/2, yPos + 22, 2);
         
         displayed++;
     }
     
     _tft->fillRect(btnSkip.x, btnSkip.y, btnSkip.w, btnSkip.h, btnSkip.color);
+    _tft->setTextColor(TFT_WHITE, btnSkip.color);
     _tft->drawString(btnSkip.label, btnSkip.x + (btnSkip.w/2), btnSkip.y + (btnSkip.h/2), 2);
 
     _tft->fillRect(btnRefresh.x, btnRefresh.y, btnRefresh.w, btnRefresh.h, btnRefresh.color);
+    _tft->setTextColor(TFT_WHITE, btnRefresh.color);
     _tft->drawString(btnRefresh.label, btnRefresh.x + (btnRefresh.w/2), btnRefresh.y + (btnRefresh.h/2), 2);
 }
 
@@ -109,11 +115,13 @@ void PageWifi::onUpdate() {
                 for(int i=0; i<loadingDots; i++) dots += ".";
                 
                 _tft->fillRect(0, 35, SCREEN_WIDTH, 30, TFT_BLACK);
+                _tft->setTextColor(TFT_WHITE, TFT_BLACK);
                 _tft->drawString("Scanning in background" + dots, SCREEN_WIDTH/2, 50, 2);
             }
         } else if (n >= 0) {
             _state = SELECTING;
             _tft->fillRect(0, 35, SCREEN_WIDTH, 30, TFT_BLACK);
+            _tft->setTextColor(TFT_WHITE, TFT_BLACK);
             _tft->drawString("Scan Complete!", SCREEN_WIDTH/2, 50, 2);
             
             if (!_manager->isKeyboardOpen()) {
@@ -151,9 +159,8 @@ void PageWifi::onUpdate() {
     else if (_state == CONNECTING) {
         if (WiFi.status() == WL_CONNECTED) {
             _tft->fillRect(0, 200, SCREEN_WIDTH, 50, TFT_BLACK);
-            _tft->setTextColor(TFT_GREEN);
+            _tft->setTextColor(TFT_GREEN, TFT_BLACK);
             _tft->drawString("CONNECTED!", SCREEN_WIDTH/2, 220, 4);
-            _tft->setTextColor(TFT_WHITE);
             saveSettings(); 
             delay(1000);
             
@@ -165,9 +172,8 @@ void PageWifi::onUpdate() {
             }
         } else if (WiFi.status() == WL_CONNECT_FAILED || (millis() - connectStartTime > 15000)) { // 15-second visual timeout
             _tft->fillRect(0, 200, SCREEN_WIDTH, 50, TFT_BLACK);
-            _tft->setTextColor(TFT_RED);
+            _tft->setTextColor(TFT_RED, TFT_BLACK);
             _tft->drawString("Failed! Bad Password.", SCREEN_WIDTH/2, 220, 2);
-            _tft->setTextColor(TFT_WHITE);
             delay(2000);
             config.wifiPass = "";
             WiFi.scanDelete(); 

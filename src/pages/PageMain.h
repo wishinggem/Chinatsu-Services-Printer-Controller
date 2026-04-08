@@ -16,4 +16,6 @@ private:
     unsigned long lastUpdate;
     void drawLiveData();
     uint16_t hexToRGB565(String hex);
+    void drawGearIcon(int x, int y, uint16_t color);
+    void drawDropIcon(int x, int y, uint16_t color);
 };

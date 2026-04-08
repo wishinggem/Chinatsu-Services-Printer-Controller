@@ -186,9 +186,8 @@ void PageManager::buildKeyboard() {
 // NEW HELPER FUNCTION
 void PageManager::drawInputBox() {
     _tft->fillRect(5, 135, 470, 30, TFT_WHITE);
-    _tft->setTextColor(TFT_BLACK);
+    _tft->setTextColor(TFT_BLACK, TFT_WHITE);
     _tft->drawString(_kbBuffer, 240, 150, 2);
-    _tft->setTextColor(TFT_WHITE);
 }
 
 void PageManager::drawKeyboard() {
@@ -198,6 +197,7 @@ void PageManager::drawKeyboard() {
     for(auto& k : _kbKeys) {
         _tft->fillRect(k.x, k.y, k.w, k.h, k.color);
         _tft->drawRect(k.x, k.y, k.w, k.h, TFT_WHITE);
+        _tft->setTextColor(TFT_WHITE, k.color);
         _tft->drawString(k.label, k.x + (k.w/2), k.y + (k.h/2), 2);
     }
 }

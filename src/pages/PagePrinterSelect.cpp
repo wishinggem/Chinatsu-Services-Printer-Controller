@@ -13,12 +13,15 @@ PagePrinterSelect::PagePrinterSelect(TFT_eSPI* tft, TAMC_GT911* touch, PageManag
 }
 
 void PagePrinterSelect::onEnter() {
+    _tft->setTextColor(TFT_WHITE, TFT_BLACK);
     _tft->drawString("Select Printer", SCREEN_WIDTH/2, 20, 4);
     
     _tft->fillRect(btnReset.x, btnReset.y, btnReset.w, btnReset.h, btnReset.color);
     _tft->drawRect(btnReset.x, btnReset.y, btnReset.w, btnReset.h, TFT_WHITE);
+    _tft->setTextColor(TFT_WHITE, btnReset.color);
     _tft->drawString(btnReset.label, btnReset.x + (btnReset.w/2), btnReset.y + (btnReset.h/2), 2);
     
+    _tft->setTextColor(TFT_WHITE, TFT_BLACK);
     _tft->drawString("Fetching devices from Bambu Cloud...", SCREEN_WIDTH/2, 160, 2);
     
     config.printerList.clear();
@@ -29,18 +32,18 @@ void PagePrinterSelect::drawPrinterList() {
     _tft->fillRect(0, 60, 480, 260, TFT_BLACK); 
     
     if (config.printerList.size() == 0) {
-        _tft->setTextColor(TFT_RED);
+        _tft->setTextColor(TFT_RED, TFT_BLACK);
         _tft->drawString("No printers found on this account!", SCREEN_WIDTH/2, 160, 2);
-        _tft->setTextColor(TFT_WHITE);
         return;
     }
     
     for (int i = 0; i < config.printerList.size(); i++) {
-        String label = config.printerList[i].name + " (" + config.printerList[i].ip + ")";
+        String label = config.printerList[i].name;
         int yPos = 80 + (i * 65);
         printerButtons.push_back({40, yPos, 400, 50, label, TFT_DARKCYAN});
         
         _tft->fillRect(40, yPos, 400, 50, TFT_DARKCYAN);
+        _tft->setTextColor(TFT_WHITE, TFT_DARKCYAN);
         _tft->drawString(label, SCREEN_WIDTH/2, yPos + 25, 2);
     }
 }
@@ -59,9 +62,8 @@ void PagePrinterSelect::onUpdate() {
             drawPrinterList();
         } else {
             _tft->fillRect(0, 60, 480, 260, TFT_BLACK);
-            _tft->setTextColor(TFT_RED);
+            _tft->setTextColor(TFT_RED, TFT_BLACK);
             _tft->drawString("Failed to fetch printers. Retrying...", SCREEN_WIDTH/2, 160, 2);
-            _tft->setTextColor(TFT_WHITE);
             delay(2000);
         }
         return;
@@ -74,6 +76,7 @@ void PagePrinterSelect::onUpdate() {
                 saveSettings();
                 
                 _tft->fillRect(0, 60, 480, 260, TFT_BLACK);
+                _tft->setTextColor(TFT_WHITE, TFT_BLACK);
                 _tft->drawString("Connecting to MQTT...", SCREEN_WIDTH/2, 160, 4);
                 
                 printerMqtt.begin(config.activePrinter.serial, config.userId, config.cloudToken);

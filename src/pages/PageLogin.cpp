@@ -24,21 +24,24 @@ void PageLogin::onEnter() {
 
 void PageLogin::drawUI() {
     _tft->fillRect(0, 0, SCREEN_WIDTH, 40, TFT_BLACK); // Clear header
+    _tft->setTextColor(TFT_WHITE, TFT_BLACK);
     _tft->drawString("Bambu Cloud Login", SCREEN_WIDTH/2, 20, 4);
     
     _tft->fillRect(btnReset.x, btnReset.y, btnReset.w, btnReset.h, btnReset.color);
     _tft->drawRect(btnReset.x, btnReset.y, btnReset.w, btnReset.h, TFT_WHITE);
+    _tft->setTextColor(TFT_WHITE, btnReset.color);
     _tft->drawString(btnReset.label, btnReset.x + (btnReset.w/2), btnReset.y + (btnReset.h/2), 2);
-    
+     
     // Always draw Email
     _tft->fillRect(inputEmail.x, inputEmail.y, inputEmail.w, inputEmail.h, TFT_WHITE);
-    _tft->setTextColor(TFT_BLACK);
+    _tft->setTextColor(TFT_BLACK, TFT_WHITE);
     String emailDisplay = (*inputEmail.valuePtr == "") ? "Tap to enter Email" : *inputEmail.valuePtr;
     _tft->drawString(emailDisplay, inputEmail.x + (inputEmail.w/2), inputEmail.y + 25, 2);
     
     // State Logic
     if (_loginState == INPUT_PASS) {
         _tft->fillRect(inputPassword.x, inputPassword.y, inputPassword.w, inputPassword.h, TFT_WHITE);
+        _tft->setTextColor(TFT_BLACK, TFT_WHITE);
         String passDisplay = "";
         for(int i=0; i<config.userPassword.length(); i++) passDisplay += "*"; // Mask password
         if (passDisplay == "") passDisplay = "Tap to enter Password";
@@ -48,14 +51,15 @@ void PageLogin::drawUI() {
     } 
     else {
         _tft->fillRect(inputAuthCode.x, inputAuthCode.y, inputAuthCode.w, inputAuthCode.h, TFT_WHITE);
+        _tft->setTextColor(TFT_BLACK, TFT_WHITE);
         String authDisplay = (*inputAuthCode.valuePtr == "") ? "Tap to enter 2FA Code" : *inputAuthCode.valuePtr;
         _tft->drawString(authDisplay, inputAuthCode.x + (inputAuthCode.w/2), inputAuthCode.y + 25, 2);
         
         btnLogin.label = "SUBMIT CODE";
     }
     
-    _tft->setTextColor(TFT_WHITE); 
     _tft->fillRect(btnLogin.x, btnLogin.y, btnLogin.w, btnLogin.h, btnLogin.color);
+    _tft->setTextColor(TFT_WHITE, btnLogin.color); 
     _tft->drawString(btnLogin.label, btnLogin.x + (btnLogin.w/2), btnLogin.y + (btnLogin.h/2), 4);
 }
 
@@ -76,6 +80,7 @@ void PageLogin::onUpdate() {
         }
         else if (btnLogin.isTouched(x, y)) {
             _tft->fillRect(btnLogin.x, btnLogin.y, btnLogin.w, btnLogin.h, TFT_DARKGREY);
+            _tft->setTextColor(TFT_WHITE, TFT_DARKGREY);
             _tft->drawString("Connecting...", btnLogin.x + (btnLogin.w/2), btnLogin.y + (btnLogin.h/2), 4);
             
             bool finalSuccess = false;
@@ -114,6 +119,7 @@ void PageLogin::onUpdate() {
                 _manager->switchPage(STATE_PRINTER_SELECT);
             } else {
                 _tft->fillRect(btnLogin.x, btnLogin.y, btnLogin.w, btnLogin.h, TFT_RED);
+                _tft->setTextColor(TFT_WHITE, TFT_RED);
                 _tft->drawString("Failed!", btnLogin.x + (btnLogin.w/2), btnLogin.y + (btnLogin.h/2), 4);
                 delay(2000);
                 drawUI(); // Redraw normal button
