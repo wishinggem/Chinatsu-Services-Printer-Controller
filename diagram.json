@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "author": "Custom Controller",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-ili9341", "id": "lcd", "top": -40, "left": 180, "rotate": 90, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:5", "lcd:CS", "green", [ "v0" ] ],
+    [ "esp:2", "lcd:D/C", "blue", [ "v0" ] ],
+    [ "esp:23", "lcd:MOSI", "orange", [ "v0" ] ],
+    [ "esp:18", "lcd:SCK", "yellow", [ "v0" ] ],
+    [ "esp:19", "lcd:MISO", "purple", [ "v0" ] ],
+    [ "esp:3V3", "lcd:VCC", "red", [ "v0" ] ],
+    [ "esp:3V3", "lcd:LED", "red", [ "v0" ] ],
+    [ "esp:GND", "lcd:GND", "black", [ "v0" ] ],
+    [ "esp:14", "lcd:T_CS", "cyan", [ "v0" ] ],
+    [ "esp:27", "lcd:T_IRQ", "pink", [ "v0" ] ],
+    [ "esp:23", "lcd:T_DIN", "orange", [ "v0" ] ],
+    [ "esp:18", "lcd:T_CLK", "yellow", [ "v0" ] ],
+    [ "esp:19", "lcd:T_DO", "purple", [ "v0" ] ]
+  ]
+}
