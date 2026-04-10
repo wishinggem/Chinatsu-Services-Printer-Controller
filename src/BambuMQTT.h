@@ -4,6 +4,33 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "Config.h"
+#include <vector>
+
+struct HMSError {
+    String code;
+    unsigned long timestamp;
+    bool isNew;
+};
+
+struct HMSDictEntry {
+    String shortDesc;
+    String longDesc;
+};
+
+extern std::vector<HMSError> hmsHistory;
+extern bool hasNewHmsError;
+extern bool chamberLightOn;
+HMSDictEntry getHMSEntry(String code);
+
+extern int printLayer;
+extern int printTotalLayers;
+extern int printRemainingTime;
+extern int printSpeedLevel;
+extern int fanPartSpeed;
+extern int fanAuxSpeed;
+extern int fanChamberSpeed;
+extern String printGcodeFile;
+extern bool hasAutoSwitchedToPrint;
 
 class BambuMQTT {
 public:

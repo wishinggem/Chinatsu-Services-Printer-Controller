@@ -16,7 +16,9 @@ PageSettings::PageSettings(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manage
     btnSelectWifi    = {165, 210, 140, 40, "WiFi",    _tft->color565(147, 51, 234)};
     btnLogout        = {315, 210, 150, 40, "Logout",  _tft->color565(245, 158, 11)};
     
-    btnBack          = {120, 270, 240, 40, "<- Back", _tft->color565(20, 83, 45)};
+    btnBack          = {15,  270, 140, 40, "<- Back", _tft->color565(20, 83, 45)};
+    btnSetIP         = {165, 270, 145, 40, "Set IP",  _tft->color565(71, 85, 105)};
+    btnSetCode       = {320, 270, 145, 40, "Set Code",_tft->color565(71, 85, 105)};
     btnWipe          = {415, 5, 50, 40, "WIPE", _tft->color565(220, 38, 38)}; // Moved to top right
     
     btnConfirmWipe   = {110, 210, 110, 50, "YES", _tft->color565(220, 38, 38)};
@@ -30,6 +32,7 @@ void PageSettings::onEnter() {
     _tft->fillScreen(_tft->color565(15, 23, 42)); // #0f172a
     _tft->fillRect(0, 0, 480, 50, _tft->color565(30, 41, 59)); // Header #1e293b
     
+    _tft->setTextDatum(MC_DATUM); // Force Center Alignment (Fixes print monitor rendering overlap)
     _tft->setTextColor(TFT_WHITE, _tft->color565(30, 41, 59));
     _tft->drawString("Device Settings", SCREEN_WIDTH/2, 25, 4);
     
@@ -37,12 +40,21 @@ void PageSettings::onEnter() {
     _tft->drawString("Brightness", 90, 100, 4);
     _tft->drawString("Timeout", 90, 160, 4);
     
-    Button btns[] = {btnBrightDown, btnBrightUp, btnTimeDown, btnTimeUp, btnSwitchPrinter, btnSelectWifi, btnLogout, btnWipe, btnBack};
+    btnSetIP.label = config.activePrinter.ip == "" ? "Set Printer IP" : "IP: " + config.activePrinter.ip;
+    
+    String maskedCode = "";
+    for (int i = 0; i < config.activePrinter.accessCode.length(); i++) maskedCode += "*";
+    btnSetCode.label = config.activePrinter.accessCode == "" ? "Set Access Code" : "Code: " + maskedCode;
+
+    Button btns[] = {btnBrightDown, btnBrightUp, btnTimeDown, btnTimeUp, btnSwitchPrinter, btnSelectWifi, btnLogout, btnWipe, btnBack, btnSetIP, btnSetCode};
     for (Button b : btns) {
         _tft->fillRect(b.x, b.y, b.w, b.h, b.color);
         _tft->drawRect(b.x, b.y, b.w, b.h, TFT_WHITE);
         _tft->setTextColor(TFT_WHITE, b.color); // FIXES BLACK BOXES IN BUTTONS!
-        int font = (b.label == "WIPE") ? 2 : 4;
+        
+        int font = 4;
+        if (b.label == "WIPE" || b.label.startsWith("IP:") || b.label.startsWith("Code:") || b.label.startsWith("Set ")) font = 2;
+        
         _tft->drawString(b.label, b.x + b.w/2, b.y + b.h/2, font);
     }
     
@@ -66,6 +78,7 @@ void PageSettings::drawModal() {
 }
 
 void PageSettings::drawValues() {
+    _tft->setTextDatum(MC_DATUM); // Prevent alignment bleeding
     _tft->setTextColor(TFT_WHITE, _tft->color565(15, 23, 42));
     _tft->fillRect(240, 80, 70, 40, _tft->color565(15, 23, 42));
     int pct = round(config.brightness / 2.55);
@@ -91,6 +104,10 @@ void PageSettings::onUpdate() {
         int pct = round(config.brightness / 2.55);
         if (btnBack.isTouched(x, y)) {
             saveSettings(); _manager->switchPage(STATE_MAIN_PAGE);
+        } else if (btnSetIP.isTouched(x, y)) {
+            _manager->openKeyboard(&config.activePrinter.ip);
+        } else if (btnSetCode.isTouched(x, y)) {
+            _manager->openKeyboard(&config.activePrinter.accessCode);
         } else if (btnBrightUp.isTouched(x, y)) {
             pct = std::min(100, pct + 10); config.brightness = pct * 2.55; drawValues(); delay(150);
         } else if (btnBrightDown.isTouched(x, y)) {

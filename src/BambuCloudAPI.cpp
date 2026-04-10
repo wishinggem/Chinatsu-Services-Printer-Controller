@@ -373,11 +373,16 @@ bool BambuCloudAPI::fetchPrinters(std::vector<PrinterInfo>& printers) {
             PrinterInfo p;
             p.name = dev["name"].as<String>();
             p.serial = dev["dev_id"].as<String>();
-            p.ip = dev["ip"].as<String>(); 
-            p.accessCode = dev["dev_access_code"].as<String>();
+            
+            p.ip = dev["ip"].isNull() ? "" : dev["ip"].as<String>(); 
+            if (p.ip == "null") p.ip = "";
+            
+            p.accessCode = dev["dev_access_code"].isNull() ? "" : dev["dev_access_code"].as<String>();
+            if (p.accessCode == "null") p.accessCode = "";
+            
             printers.push_back(p);
             
-            Serial.printf("[CloudAPI - DEVICES] Found Printer: %s\n", p.name.c_str());
+            Serial.printf("[CloudAPI - DEVICES] Found Printer: %s (IP: %s)\n", p.name.c_str(), p.ip == "" ? "Unknown" : p.ip.c_str());
         }
         return true;
     }

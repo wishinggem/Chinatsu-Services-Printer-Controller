@@ -10,7 +10,7 @@ public:
 private:
     Button btnBack, btnWipe, btnSwitchPrinter, btnLogout, btnSelectWifi;
     Button btnBrightUp, btnBrightDown, btnTimeUp, btnTimeDown;
-    Button btnConfirmWipe, btnCancelWipe;
+    Button btnConfirmWipe, btnCancelWipe, btnSetIP, btnSetCode;
     
     void drawValues();
     void drawModal();
