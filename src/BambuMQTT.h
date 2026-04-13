@@ -31,6 +31,9 @@ extern int fanAuxSpeed;
 extern int fanChamberSpeed;
 extern String printGcodeFile;
 extern bool hasAutoSwitchedToPrint;
+extern int amsRemain[4];
+extern String amsBrand[4];
+extern bool dumpNextMqttPacket;
 
 class BambuMQTT {
 public:

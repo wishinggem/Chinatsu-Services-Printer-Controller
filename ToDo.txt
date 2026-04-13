@@ -1,3 +1,0 @@
-make printer screen reading better / more responsive (having to reboot to pickup new info)
-
-make the light toggle better sometimes it doesnt work especially when printing

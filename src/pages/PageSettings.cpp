@@ -2,6 +2,9 @@
 #include "PageManager.h"
 #include <algorithm> // For std::min / std::max
 
+#include "../BambuMQTT.h"
+extern BambuMQTT printerMqtt;
+
 PageSettings::PageSettings(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manager) 
     : Page(tft, touch, manager) {
     
@@ -10,6 +13,8 @@ PageSettings::PageSettings(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manage
     
     btnTimeDown   = {180, 140, 50, 40, "-", _tft->color565(71, 85, 105)};
     btnTimeUp     = {320, 140, 50, 40, "+", _tft->color565(71, 85, 105)};
+    
+    btnDumpMqtt   = {380, 140, 85, 40, "Dump MQTT", _tft->color565(71, 85, 105)};
 
     // Shortened labels for Font 4 crispness!
     btnSwitchPrinter = {15,  210, 140, 40, "Printer", _tft->color565(37, 99, 235)};
@@ -46,14 +51,14 @@ void PageSettings::onEnter() {
     for (int i = 0; i < config.activePrinter.accessCode.length(); i++) maskedCode += "*";
     btnSetCode.label = config.activePrinter.accessCode == "" ? "Set Access Code" : "Code: " + maskedCode;
 
-    Button btns[] = {btnBrightDown, btnBrightUp, btnTimeDown, btnTimeUp, btnSwitchPrinter, btnSelectWifi, btnLogout, btnWipe, btnBack, btnSetIP, btnSetCode};
+    Button btns[] = {btnBrightDown, btnBrightUp, btnTimeDown, btnTimeUp, btnSwitchPrinter, btnSelectWifi, btnLogout, btnWipe, btnBack, btnSetIP, btnSetCode, btnDumpMqtt};
     for (Button b : btns) {
         _tft->fillRect(b.x, b.y, b.w, b.h, b.color);
         _tft->drawRect(b.x, b.y, b.w, b.h, TFT_WHITE);
         _tft->setTextColor(TFT_WHITE, b.color); // FIXES BLACK BOXES IN BUTTONS!
         
         int font = 4;
-        if (b.label == "WIPE" || b.label.startsWith("IP:") || b.label.startsWith("Code:") || b.label.startsWith("Set ")) font = 2;
+        if (b.label == "WIPE" || b.label == "Dump MQTT" || b.label.startsWith("IP:") || b.label.startsWith("Code:") || b.label.startsWith("Set ")) font = 2;
         
         _tft->drawString(b.label, b.x + b.w/2, b.y + b.h/2, font);
     }
@@ -116,6 +121,16 @@ void PageSettings::onUpdate() {
             config.screenTimeout += 1; drawValues(); delay(150);
         } else if (btnTimeDown.isTouched(x, y)) {
             config.screenTimeout = std::max(0, config.screenTimeout - 1); drawValues(); delay(150);
+        } else if (btnDumpMqtt.isTouched(x, y)) {
+            extern bool dumpNextMqttPacket;
+            dumpNextMqttPacket = true;
+            printerMqtt.requestStatusUpdate(); // Force the printer to send the massive "pushall" payload
+            _tft->fillRect(btnDumpMqtt.x, btnDumpMqtt.y, btnDumpMqtt.w, btnDumpMqtt.h, TFT_GREEN);
+            _tft->drawRect(btnDumpMqtt.x, btnDumpMqtt.y, btnDumpMqtt.w, btnDumpMqtt.h, TFT_WHITE);
+            _tft->setTextColor(TFT_BLACK, TFT_GREEN);
+            _tft->drawString("Waiting...", btnDumpMqtt.x + btnDumpMqtt.w/2, btnDumpMqtt.y + btnDumpMqtt.h/2, 2);
+            delay(500); 
+            onEnter(); // Reset visual state
         } else if (btnSwitchPrinter.isTouched(x, y)) {
             _manager->switchPage(STATE_PRINTER_SELECT);
         } else if (btnSelectWifi.isTouched(x, y)) {

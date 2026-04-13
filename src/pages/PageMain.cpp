@@ -12,6 +12,8 @@
 
 extern BambuMQTT printerMqtt;
 extern bool chamberLightOn;
+extern int amsRemain[4];
+extern String amsBrand[4];
 
 PageMain::PageMain(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manager) 
     : Page(tft, touch, manager) {
@@ -127,6 +129,8 @@ void PageMain::onEnter() {
     for(int i=0; i<4; i++) {
         lastAms[i].type = "FORCE_UPDATE";
         lastAms[i].color = "FORCE_UPDATE";
+        lastRemain[i] = -2;
+        lastBrand[i] = "FORCE_UPDATE";
     }
     
     // Draw Bottom Navigation Buttons
@@ -157,9 +161,11 @@ void PageMain::drawLiveData() {
     }
 
     for(int i=0; i<4; i++) {
-        if (lastAms[i].type != config.liveData.ams[i].type || lastAms[i].color != config.liveData.ams[i].color) {
+        if (lastAms[i].type != config.liveData.ams[i].type || lastAms[i].color != config.liveData.ams[i].color || lastRemain[i] != amsRemain[i] || lastBrand[i] != amsBrand[i]) {
             lastAms[i].type = config.liveData.ams[i].type;
             lastAms[i].color = config.liveData.ams[i].color;
+            lastRemain[i] = amsRemain[i];
+            lastBrand[i] = amsBrand[i];
             
             // Clear the entire slot background + flanges area
             _tft->fillRect(slots[i].x - 8, slots[i].y - 6, slots[i].w + 16, slots[i].h + 12, _tft->color565(15, 23, 42));
@@ -190,13 +196,33 @@ void PageMain::drawLiveData() {
             
             // Draw Spool Base & Center
             _tft->fillRoundRect(slots[i].x, slots[i].y, slots[i].w, slots[i].h, 12, _tft->color565(20, 20, 20));
-            _tft->fillRect(slots[i].x + 8, slots[i].y + 6, slots[i].w - 16, slots[i].h - 12, color);
             
-            // Contrast text color based on background luminance (heuristic)
-            long rgb = strtol(config.liveData.ams[i].color.substring(0,6).c_str(), NULL, 16);
-            int r = (rgb >> 16) & 0xFF; int g = (rgb >> 8) & 0xFF; int b = rgb & 0xFF;
-            float luminance = (0.299*r + 0.587*g + 0.114*b);
-            _tft->setTextColor(luminance > 128 ? TFT_BLACK : TFT_WHITE, color);
+            bool isBambu = false;
+            String brandUpper = amsBrand[i];
+            brandUpper.toUpperCase();
+            const uint8_t* selectedLogo = logo_generic;
+            
+            for (int k = 0; k < sizeof(KNOWN_LOGOS)/sizeof(KNOWN_LOGOS[0]); k++) {
+                String dictBrand = KNOWN_LOGOS[k].brand;
+                dictBrand.toUpperCase();
+                if (brandUpper.indexOf(dictBrand) >= 0) {
+                    selectedLogo = KNOWN_LOGOS[k].bitmap;
+                    if (dictBrand == "BAMBU") isBambu = true;
+                    break;
+                }
+            }
+
+            int pct = amsRemain[i];
+            if (!isBambu) pct = 100; // Force visually full tank for Generic
+            if (pct < 0) pct = 0;
+            if (pct > 100) pct = 100;
+            
+            int totalH = slots[i].h - 12;
+            int remainH = (totalH * pct) / 100;
+            int emptyH = totalH - remainH;
+
+            _tft->fillRect(slots[i].x + 8, slots[i].y + 6, slots[i].w - 16, emptyH, _tft->color565(30, 41, 59));
+            _tft->fillRect(slots[i].x + 8, slots[i].y + 6 + emptyH, slots[i].w - 16, remainH, color);
             
             _tft->setTextDatum(MC_DATUM);
             
@@ -218,9 +244,24 @@ void PageMain::drawLiveData() {
             }
             
             int yCursor = slots[i].y + slots[i].h / 2 - ((lines.size() - 1) * 25) / 2;
+            yCursor -= 8; // Shift up slightly to leave room for percentage at bottom
             for (size_t j = 0; j < lines.size(); j++) {
+                _tft->setTextColor(TFT_BLACK); // Drop-shadow
+                _tft->drawString(lines[j], slots[i].x + slots[i].w/2 + 2, yCursor + 2, 4);
+                _tft->setTextColor(TFT_WHITE); // Foreground
                 _tft->drawString(lines[j], slots[i].x + slots[i].w/2, yCursor, 4);
                 yCursor += 25;
+            }
+            
+            // Draw drop-shadowed logo dynamically below the text
+            _tft->drawXBitmap(slots[i].x + slots[i].w/2 - 8 + 1, yCursor + 2 + 1, selectedLogo, 16, 16, TFT_BLACK);
+            _tft->drawXBitmap(slots[i].x + slots[i].w/2 - 8, yCursor + 2, selectedLogo, 16, 16, TFT_WHITE);
+
+            if (isBambu) {
+                _tft->setTextColor(TFT_BLACK);
+                _tft->drawString(String(pct) + "%", slots[i].x + slots[i].w/2 + 2, slots[i].y + slots[i].h - 20 + 2, 2);
+                _tft->setTextColor(TFT_WHITE);
+                _tft->drawString(String(pct) + "%", slots[i].x + slots[i].w/2, slots[i].y + slots[i].h - 20, 2);
             }
         }
     }

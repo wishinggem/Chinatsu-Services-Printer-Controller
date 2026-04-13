@@ -23,6 +23,9 @@ int fanAuxSpeed = 0;
 int fanChamberSpeed = 0;
 String printGcodeFile = "";
 bool hasAutoSwitchedToPrint = false;
+int amsRemain[4] = {-1, -1, -1, -1};
+String amsBrand[4] = {"", "", "", ""};
+bool dumpNextMqttPacket = false;
 
 HMSDictEntry getHMSEntry(String code) {
     String c = code;
@@ -138,6 +141,79 @@ HMSDictEntry getHMSEntry(String code) {
     if (c == "05000500") return {"No MQTT Auth", "MQTT Command verification failed, please update Studio or Handy."};
     
     return {"Unknown Error", "An unknown error occurred. Code: " + code};
+}
+
+String getFilamentBrand(String idx, String subBrand) {
+    // --- BAMBU LAB OFFICIAL (GF series) ---
+    if (idx == "GFA00") return "Bambu"; // Bambu PLA Basic
+    if (idx == "GFA01") return "Bambu"; // Bambu PLA Matte
+    if (idx == "GFA02") return "Bambu"; // Bambu PLA Sparkle
+    if (idx == "GFA03") return "Bambu"; // Bambu PLA Tough
+    if (idx == "GFA04") return "Bambu"; // Bambu PLA Galaxy
+    if (idx == "GFA05") return "Bambu"; // Bambu PLA-CF
+    if (idx == "GFA07") return "Bambu"; // Bambu PLA Silk
+    if (idx == "GFA08") return "Bambu"; // Bambu Support for PLA
+    if (idx == "GFA09") return "Bambu"; // Bambu PLA Aero
+    if (idx == "GFA11") return "Bambu"; // Bambu PLA Metal
+    if (idx == "GFA12") return "Bambu"; // Bambu PLA Marble
+    if (idx == "GFA13") return "Bambu"; // Bambu PLA Glow
+    if (idx == "GFA14") return "Bambu"; // Bambu PLA Silk Dual Color
+    if (idx == "GFG00") return "Bambu"; // Bambu PETG Basic
+    if (idx == "GFG01") return "Bambu"; // Bambu PETG-CF
+    if (idx == "GFG02") return "Bambu"; // Bambu PETG HF
+    if (idx == "GFG03") return "Bambu"; // Bambu PETG Translucent
+    if (idx == "GFG50") return "Bambu"; // Bambu Support for PETG
+    if (idx == "GFN00") return "Bambu"; // Bambu ABS
+    if (idx == "GFN01") return "Bambu"; // Bambu ABS-GF
+    if (idx == "GFN02") return "Bambu"; // Bambu ABS-CF
+    if (idx == "GFC00") return "Bambu"; // Bambu PA-CF
+    if (idx == "GFC01") return "Bambu"; // Bambu PAHT-CF
+    if (idx == "GFC02") return "Bambu"; // Bambu PA6-CF
+    if (idx == "GFC03") return "Bambu"; // Bambu PA6-GF
+    if (idx == "GFS00") return "Bambu"; // Bambu ASA
+    if (idx == "GFS01") return "Bambu"; // Bambu ASA-Aero
+    if (idx == "GFU01") return "Bambu"; // Bambu TPU 95A
+    if (idx == "GFU02") return "Bambu"; // Bambu TPU for AMS
+    if (idx == "GFU03") return "Bambu"; // Bambu TPU 95A HF
+    if (idx == "GFB00") return "Bambu"; // Bambu PC
+    if (idx == "GFB01") return "Bambu"; // Bambu PC-CF
+    
+    // --- THIRD PARTY PRESETS (GFL series) ---
+    if (idx == "GFL99") return "Generic"; // Generic PLA
+    if (idx == "GFL98") return "Generic"; // Generic PETG
+    if (idx == "GFL97") return "Generic"; // Generic ABS
+    if (idx == "GFL96") return "Generic"; // Generic ASA
+    if (idx == "GFL95") return "Generic"; // Generic TPU
+    if (idx == "GFL94") return "Generic"; // Generic PC
+    if (idx == "GFL93") return "Generic"; // Generic PA-CF
+    if (idx == "GFL92") return "Generic"; // Generic PA
+    if (idx == "GFL91") return "Generic"; // Generic PET
+    if (idx == "GFL90") return "Generic"; // Generic PET-CF
+    if (idx == "GFL89") return "Generic"; // Generic PVA
+    if (idx == "GFL88") return "Generic"; // Generic HIPS
+    if (idx == "GFL00") return "Sunlu"; // PolyTerra / Sunlu PLA
+    if (idx == "GFL01") return "eSUN"; // eSUN PLA+
+    if (idx == "GFL02") return "Hatchbox"; // Hatchbox PLA
+    if (idx == "GFL03") return "PolyLite"; // PolyLite PLA
+    if (idx == "GFL04") return "PolyLite"; // PolyLite PETG
+    if (idx == "GFL05") return "Overture"; // Overture PLA
+    if (idx == "GFL06") return "Overture"; // Overture PETG
+    if (idx == "GFL07") return "eSUN"; // eSUN PETG
+    
+    // --- SPECIAL / SUPPORT ---
+    if (idx == "GFS99") return "Generic"; // Generic Support for PLA
+    if (idx == "GFS98") return "Generic"; // Generic Support for PA/PET
+    
+    // Edge cases / Fallbacks
+    if (idx.startsWith("GF") && !idx.startsWith("GFL") && !idx.startsWith("GFS")) return "Bambu";
+    if (idx.startsWith("GFL") || idx.startsWith("GFS")) return "Generic";
+
+    if (subBrand != "") {
+        String subLower = subBrand;
+        subLower.toLowerCase();
+        if (subLower.indexOf("bambu") >= 0) return "Bambu";
+    }
+    return "Generic";
 }
 
 BambuMQTT::BambuMQTT() : _mqtt(_secureClient) {
@@ -323,6 +399,16 @@ void BambuMQTT::setChamberLight(bool on) {
 
 void BambuMQTT::callback(char* topic, byte* payload, unsigned int length) {
     if (globalMQTTInstance) {
+        if (dumpNextMqttPacket) {
+            // A full "pushall" payload is typically >2000 bytes, while normal differential updates are ~150 bytes.
+            if (length > 1000) {
+                Serial.println("\n========== FULL MQTT PAYLOAD DUMP ==========");
+                for (unsigned int i = 0; i < length; i++) Serial.print((char)payload[i]);
+                Serial.println("\n============================================\n");
+                dumpNextMqttPacket = false;
+            }
+        }
+        
         globalMQTTInstance->_lastUpdateRx = millis();
         globalMQTTInstance->parseStatusPayload(payload, length);
     }
@@ -406,16 +492,25 @@ void BambuMQTT::parseStatusPayload(byte* payload, unsigned int length) {
                         config.liveData.amsHumidity = amsList[0]["humidity_raw"].as<String>();
                     }
                     JsonArray trays = amsList[0]["tray"];
-                    for (int i = 0; i < 4; i++) {
-                        config.liveData.ams[i].type = "";
-                        config.liveData.ams[i].color = "";
-                    }
                     for (JsonObject tray : trays) {
                         if (tray.containsKey("id")) {
                             int id = tray["id"].as<String>().toInt();
                             if (id >= 0 && id < 4) {
                                 if (tray.containsKey("tray_color")) config.liveData.ams[id].color = tray["tray_color"].as<String>();
                                 if (tray.containsKey("tray_type")) config.liveData.ams[id].type = tray["tray_type"].as<String>();
+                                if (tray.containsKey("remain")) amsRemain[id] = tray["remain"].as<int>();
+                                
+                                // Prioritize tray_info_idx for 100% accurate brand mapping
+                                if (tray.containsKey("tray_info_idx") && tray["tray_info_idx"].as<String>().length() > 0) {
+                                    String idx = tray["tray_info_idx"].as<String>();
+                                    String subBrand = tray.containsKey("tray_sub_brands") ? tray["tray_sub_brands"].as<String>() : "";
+                                    amsBrand[id] = getFilamentBrand(idx, subBrand);
+                                } else if (tray.containsKey("tray_sub_brands")) {
+                                    String brand = tray["tray_sub_brands"].as<String>();
+                                    String brandLower = brand;
+                                    brandLower.toLowerCase();
+                                    amsBrand[id] = (brandLower.indexOf("bambu") >= 0) ? "Bambu" : "Generic";
+                                }
                             }
                         }
                     }

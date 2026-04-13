@@ -169,7 +169,10 @@ void loop() {
         analogWrite(TFT_BL_PIN, currentBrightness); 
     }
     
-    if (config.currentState == STATE_MAIN_PAGE) {
+    // Keep MQTT and WiFi alive on ALL pages (as long as we are past the setup screens)
+    if (config.currentState != STATE_WIFI_SCAN && 
+        config.currentState != STATE_LOGIN && 
+        config.currentState != STATE_PRINTER_SELECT) {
         static unsigned long lastWifiCheck = 0;
         if (WiFi.status() != WL_CONNECTED) {
             if (millis() - lastWifiCheck > 10000) { // 10 second retry timer
