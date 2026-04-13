@@ -52,7 +52,7 @@ private:
     String _serial;
     String _topicPub;
     String _topicSub;
-    unsigned long _lastPing; // Track heartbeat
+    unsigned long _lastUpdateRx; // Track heartbeat
 
     void reconnect();
     void parseStatusPayload(byte* payload, unsigned int length);

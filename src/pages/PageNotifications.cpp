@@ -55,7 +55,7 @@ void PageNotifications::drawList() {
     bool scrolling = hmsHistory.size() > maxVisible;
     int listWidth = scrolling ? 340 : 390;
     int startIdx = scrollOffset / 60;
-    
+
     _tft->setTextDatum(ML_DATUM);
     for (int i = 0; i < maxVisible; i++) {
         int idx = startIdx + i;
@@ -178,7 +178,7 @@ void PageNotifications::onUpdate() {
             int listWidth = scrolling ? 340 : 390;
             
             // Check scroll buttons
-            if (scrolling && x >= 430) {
+            if (scrolling) {
                 if (y >= 60 && y <= 160) {
                     // UP
                     if (scrollOffset > 0) {

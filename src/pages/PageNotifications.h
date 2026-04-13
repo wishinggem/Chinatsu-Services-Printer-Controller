@@ -13,6 +13,7 @@ public:
     void onUpdate() override;
 
 private:
+
     int scrollOffset = 0;
     int selectedErrorIdx = -1;
     unsigned long lastTouchTime = 0;

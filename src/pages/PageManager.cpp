@@ -6,9 +6,14 @@
 #include "PageSettings.h"
 #include "PageNotifications.h"
 #include "PagePrintMonitor.h"
+#include "PageAMS.h" // Added since AMS needs to be referenced
 
 #ifndef STATE_PRINT_MONITOR
 #define STATE_PRINT_MONITOR 11
+#endif
+
+#ifndef STATE_AMS_PAGE
+#define STATE_AMS_PAGE 12
 #endif
 
 PageManager::PageManager(TFT_eSPI* tft, TAMC_GT911* touch) {
@@ -96,6 +101,7 @@ void PageManager::switchPage(AppState newState) {
         case STATE_PRINTER_SELECT: _currentPage = new PagePrinterSelect(_tft, _touch, this); break; 
         case STATE_MAIN_PAGE: _currentPage = new PageMain(_tft, _touch, this); break;
         case STATE_SETTINGS: _currentPage = new PageSettings(_tft, _touch, this); break;
+        case static_cast<AppState>(STATE_AMS_PAGE): _currentPage = new PageAMS(_tft, _touch, this); break;
         case static_cast<AppState>(STATE_NOTIFICATIONS): _currentPage = new PageNotifications(_tft, _touch, this); break;
         case static_cast<AppState>(STATE_PRINT_MONITOR): _currentPage = new PagePrintMonitor(_tft, _touch, this); break;
     }

@@ -15,7 +15,7 @@ private:
     TextInput inputEmail;
     TextInput inputPassword;
     TextInput inputAuthCode;
-    
+
     LoginState _loginState;
     void drawUI();
 };

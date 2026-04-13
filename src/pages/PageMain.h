@@ -9,7 +9,7 @@ public:
 
 private:
     Button slots[4];
-    
+
     String lastHumidity;
     bool lastLightState;
     AMSTray lastAms[4];

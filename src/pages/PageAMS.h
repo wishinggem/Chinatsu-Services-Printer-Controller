@@ -13,7 +13,7 @@ private:
     TextInput typeInput;
     TextInput colorInput;
     Button palette[16];
-    
+
     String hexColors[16] = {
         "FFFFFF", "000000", "888888", "444444",
         "FF0000", "FFA500", "FFFF00", "90EE90",

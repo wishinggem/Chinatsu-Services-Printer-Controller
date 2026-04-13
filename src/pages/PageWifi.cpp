@@ -58,7 +58,7 @@ void PageWifi::drawNetworks() {
     _tft->fillRect(0, 80, SCREEN_WIDTH, 160, TFT_BLACK); 
     int n = WiFi.scanComplete();
     networkButtons.clear();
-    
+
     int displayed = 0;
     for (int i = 0; i < n && displayed < 3; ++i) {
         String ssid = WiFi.SSID(i);

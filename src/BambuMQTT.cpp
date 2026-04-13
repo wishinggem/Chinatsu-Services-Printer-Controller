@@ -142,7 +142,7 @@ HMSDictEntry getHMSEntry(String code) {
 
 BambuMQTT::BambuMQTT() : _mqtt(_secureClient) {
     globalMQTTInstance = this;
-    _lastPing = 0;
+    _lastUpdateRx = 0;
 }
 
 void BambuMQTT::begin(String serial, String userId, String cloudToken) {
@@ -161,7 +161,7 @@ void BambuMQTT::begin(String serial, String userId, String cloudToken) {
     
     _mqtt.setKeepAlive(60);
     _mqtt.setSocketTimeout(30);
-    _mqtt.setBufferSize(8192); // Necessary for large payloads
+    _mqtt.setBufferSize(16384); // Necessary for large payloads during printing
     
     String clientId = "bambu-client-" + serial;
     
@@ -221,8 +221,8 @@ void BambuMQTT::loop() {
     }
 
     _mqtt.loop();
-    if (millis() - _lastPing > 6000) {
-        _lastPing = millis();
+    if (millis() - _lastUpdateRx > 300000) { // Force update if no message received in 5 mins
+        _lastUpdateRx = millis();
         requestStatusUpdate();
     }
 }
@@ -303,9 +303,10 @@ void BambuMQTT::stopPrint() {
 }
 
 void BambuMQTT::setChamberLight(bool on) {
+    static int lightSeq = 7;
     DynamicJsonDocument doc(256);
     JsonObject sys = doc.createNestedObject("system");
-    sys["sequence_id"] = "7";
+    sys["sequence_id"] = String(lightSeq++);
     sys["command"] = "ledctrl";
     sys["led_node"] = "chamber_light";
     sys["led_mode"] = on ? "on" : "off";
@@ -322,6 +323,7 @@ void BambuMQTT::setChamberLight(bool on) {
 
 void BambuMQTT::callback(char* topic, byte* payload, unsigned int length) {
     if (globalMQTTInstance) {
+        globalMQTTInstance->_lastUpdateRx = millis();
         globalMQTTInstance->parseStatusPayload(payload, length);
     }
 }
@@ -352,7 +354,7 @@ void BambuMQTT::parseStatusPayload(byte* payload, unsigned int length) {
     filter["print"]["lights_report"] = true;
 
     // 2. Parse payload using the filter
-    DynamicJsonDocument doc(4096); // Bumped up slightly to handle AMS arrays
+    DynamicJsonDocument doc(8192); // Bumped up to safely handle deeply nested/large filtered structures
     DeserializationError error = deserializeJson(doc, payload, length, DeserializationOption::Filter(filter));
 
     if (!error) {
