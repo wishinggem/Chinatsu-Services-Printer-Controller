@@ -6,6 +6,7 @@
 #include "Config.h"
 #include "pages/PageManager.h"
 #include "BambuCloudAPI.h"
+#include <ESPAsyncWebServer.h>
 #include "BambuMQTT.h"
 
 // ==========================================
@@ -22,6 +23,7 @@ TAMC_GT911 touch = TAMC_GT911(TOUCH_SDA, TOUCH_SCL, TOUCH_INT, TOUCH_RST, 320, 4
 
 PageManager uiManager(&tft, &touch);
 BambuCloudAPI cloudApi;
+AsyncWebServer server(80);
 BambuMQTT printerMqtt;
 
 void factoryReset() {

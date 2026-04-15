@@ -164,6 +164,8 @@ private:
     AMSTray lastAms[4];
     int lastRemain[4];
     String lastBrand[4];
+    int lastActiveTray;
+    String lastStatus;
     
     bool notificationDrawn = false;
     unsigned long notificationTime = 0;

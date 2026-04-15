@@ -25,6 +25,7 @@ String printGcodeFile = "";
 bool hasAutoSwitchedToPrint = false;
 int amsRemain[4] = {-1, -1, -1, -1};
 String amsBrand[4] = {"", "", "", ""};
+int amsActiveTray = -1;
 bool dumpNextMqttPacket = false;
 
 HMSDictEntry getHMSEntry(String code) {
@@ -203,6 +204,9 @@ String getFilamentBrand(String idx, String subBrand) {
     // --- SPECIAL / SUPPORT ---
     if (idx == "GFS99") return "Generic"; // Generic Support for PLA
     if (idx == "GFS98") return "Generic"; // Generic Support for PA/PET
+
+    // --- UNKNOWN / UNRECOGNIZED / GENERIC ---
+    if (idx == "GFG99") return "Generic"; // Generic PETG
     
     // Edge cases / Fallbacks
     if (idx.startsWith("GF") && !idx.startsWith("GFL") && !idx.startsWith("GFS")) return "Bambu";
@@ -482,9 +486,13 @@ void BambuMQTT::parseStatusPayload(byte* payload, unsigned int length) {
             }
             
             // Capture AMS Slot Data
-            if (print.containsKey("ams") && print["ams"].containsKey("ams")) {
-                JsonArray amsList = print["ams"]["ams"];
-                if (amsList.size() > 0) {
+            if (print.containsKey("ams")) {
+                if (print["ams"].containsKey("tray_now")) {
+                    amsActiveTray = print["ams"]["tray_now"].as<String>().toInt();
+                }
+                if (print["ams"].containsKey("ams")) {
+                    JsonArray amsList = print["ams"]["ams"];
+                    if (amsList.size() > 0) {
                     if (amsList[0].containsKey("humidity")) {
                         config.liveData.amsHumidity = amsList[0]["humidity"].as<String>();
                     }
@@ -514,6 +522,7 @@ void BambuMQTT::parseStatusPayload(byte* payload, unsigned int length) {
                             }
                         }
                     }
+                }
                 }
             }
             

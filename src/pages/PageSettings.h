@@ -8,7 +8,7 @@ public:
     void onUpdate() override;
     
 private:
-    Button btnBack, btnWipe, btnSwitchPrinter, btnLogout, btnSelectWifi;
+    Button btnBack, btnWipe, btnSwitchPrinter, btnLogout, btnSelectWifi, btnOTAUpdate;
     Button btnBrightUp, btnBrightDown, btnTimeUp, btnTimeDown;
     Button btnConfirmWipe, btnCancelWipe, btnSetIP, btnSetCode, btnDumpMqtt;
 

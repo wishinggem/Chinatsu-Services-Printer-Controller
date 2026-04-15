@@ -14,6 +14,7 @@ extern BambuMQTT printerMqtt;
 extern bool chamberLightOn;
 extern int amsRemain[4];
 extern String amsBrand[4];
+extern int amsActiveTray;
 
 PageMain::PageMain(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manager) 
     : Page(tft, touch, manager) {
@@ -133,6 +134,9 @@ void PageMain::onEnter() {
         lastBrand[i] = "FORCE_UPDATE";
     }
     
+    lastActiveTray = -2;
+    lastStatus = "FORCE";
+
     // Draw Bottom Navigation Buttons
     _tft->fillRoundRect(10, 270, 90, 40, 8, _tft->color565(56, 189, 248)); // AMS is active
     _tft->drawRoundRect(10, 270, 90, 40, 8, TFT_WHITE);
@@ -160,15 +164,28 @@ void PageMain::drawLiveData() {
         drawLightIcon(40, 25, TFT_WHITE, chamberLightOn);
     }
 
+    bool activeTrayChanged = (lastActiveTray != amsActiveTray) || (lastStatus != config.liveData.status);
+    if (activeTrayChanged) {
+        lastActiveTray = amsActiveTray;
+        lastStatus = config.liveData.status;
+    }
+
     for(int i=0; i<4; i++) {
-        if (lastAms[i].type != config.liveData.ams[i].type || lastAms[i].color != config.liveData.ams[i].color || lastRemain[i] != amsRemain[i] || lastBrand[i] != amsBrand[i]) {
+        if (lastAms[i].type != config.liveData.ams[i].type || lastAms[i].color != config.liveData.ams[i].color || lastRemain[i] != amsRemain[i] || lastBrand[i] != amsBrand[i] || activeTrayChanged) {
             lastAms[i].type = config.liveData.ams[i].type;
             lastAms[i].color = config.liveData.ams[i].color;
             lastRemain[i] = amsRemain[i];
             lastBrand[i] = amsBrand[i];
             
-            // Clear the entire slot background + flanges area
-            _tft->fillRect(slots[i].x - 8, slots[i].y - 6, slots[i].w + 16, slots[i].h + 12, _tft->color565(15, 23, 42));
+            // Clear the entire slot background + flanges area (expanded for highlight)
+            _tft->fillRect(slots[i].x - 10, slots[i].y - 8, slots[i].w + 20, slots[i].h + 16, _tft->color565(15, 23, 42));
+
+            bool isPrinting = (config.liveData.status == "Printing" || config.liveData.status == "Preparing");
+            if (isPrinting && amsActiveTray == i) {
+                // Draw active green highlight
+                _tft->fillRoundRect(slots[i].x - 8, slots[i].y - 6, slots[i].w + 16, slots[i].h + 12, 8, TFT_GREEN);
+                _tft->fillRoundRect(slots[i].x - 6, slots[i].y - 4, slots[i].w + 12, slots[i].h + 8, 6, _tft->color565(15, 23, 42)); // Inner background clear
+            }
 
             // Empty slot check
             if (lastAms[i].type == "" || lastAms[i].color == "") {

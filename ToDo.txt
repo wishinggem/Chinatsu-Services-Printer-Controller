@@ -1,0 +1,5 @@
+add a version number
+
+add a nice little account page.
+
+update settings page
