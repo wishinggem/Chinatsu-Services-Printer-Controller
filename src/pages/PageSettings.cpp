@@ -2,6 +2,8 @@
 #include "PageManager.h"
 #include <algorithm> // For std::min / std::max
 
+#include "Version.h"
+
 #include "../BambuMQTT.h"
 extern BambuMQTT printerMqtt;
 
@@ -43,7 +45,7 @@ void PageSettings::onEnter() {
     
     _tft->setTextDatum(MC_DATUM); // Force Center Alignment (Fixes print monitor rendering overlap)
     _tft->setTextColor(TFT_WHITE, _tft->color565(30, 41, 59));
-    _tft->drawString("Device Settings", SCREEN_WIDTH/2, 25, 4);
+    _tft->drawString("Device Settings (v" + String(APP_VERSION) + ")", SCREEN_WIDTH/2, 25, 4);
     
     _tft->setTextColor(TFT_WHITE, _tft->color565(15, 23, 42));
     _tft->drawString("Brightness", 90, 100, 4);

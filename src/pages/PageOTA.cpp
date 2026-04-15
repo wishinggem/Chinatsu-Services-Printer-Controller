@@ -36,10 +36,12 @@ void PageOTA::onEnter() {
     _tft->drawString("http://" + WiFi.localIP().toString() + "/update", SCREEN_WIDTH / 2, 150, 4);
 
     _tft->setTextColor(TFT_WHITE, _tft->color565(15, 23, 42));
+    _tft->setTextDatum(TL_DATUM);
     _tft->drawString("3. Upload the 'firmware.bin' file.", 20, 180, 2);
     _tft->drawString("The device will reboot automatically.", 20, 200, 2);
 
     // Draw Back button
+    _tft->setTextDatum(MC_DATUM);
     _tft->fillRect(btnBack.x, btnBack.y, btnBack.w, btnBack.h, btnBack.color);
     _tft->drawRect(btnBack.x, btnBack.y, btnBack.w, btnBack.h, TFT_WHITE);
     _tft->setTextColor(TFT_WHITE, btnBack.color);

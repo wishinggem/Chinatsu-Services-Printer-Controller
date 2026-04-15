@@ -181,15 +181,13 @@ void PageMain::drawLiveData() {
             _tft->fillRect(slots[i].x - 10, slots[i].y - 8, slots[i].w + 20, slots[i].h + 16, _tft->color565(15, 23, 42));
 
             bool isPrinting = (config.liveData.status == "Printing" || config.liveData.status == "Preparing");
+            uint16_t flangeColor = _tft->color565(51, 65, 85); // Default Slate 600
             if (isPrinting && amsActiveTray == i) {
-                // Draw active green highlight
-                _tft->fillRoundRect(slots[i].x - 8, slots[i].y - 6, slots[i].w + 16, slots[i].h + 12, 8, TFT_GREEN);
-                _tft->fillRoundRect(slots[i].x - 6, slots[i].y - 4, slots[i].w + 12, slots[i].h + 8, 6, _tft->color565(15, 23, 42)); // Inner background clear
+                flangeColor = _tft->color565(5, 150, 105); //muted emerald
             }
 
-            // Empty slot check
+            // Empty slot check 
             if (lastAms[i].type == "" || lastAms[i].color == "") {
-                uint16_t flangeColor = _tft->color565(51, 65, 85);
                 _tft->fillRoundRect(slots[i].x - 6, slots[i].y - 4, 12, slots[i].h + 8, 6, flangeColor);
                 _tft->fillRoundRect(slots[i].x + slots[i].w - 6, slots[i].y - 4, 12, slots[i].h + 8, 6, flangeColor);
                 
@@ -207,7 +205,6 @@ void PageMain::drawLiveData() {
             uint16_t color = hexToRGB565(config.liveData.ams[i].color);
             
             // Draw Spool Flanges
-            uint16_t flangeColor = _tft->color565(51, 65, 85);
             _tft->fillRoundRect(slots[i].x - 6, slots[i].y - 4, 12, slots[i].h + 8, 6, flangeColor);
             _tft->fillRoundRect(slots[i].x + slots[i].w - 6, slots[i].y - 4, 12, slots[i].h + 8, 6, flangeColor);
             
