@@ -1,9 +1,5 @@
-add a version number /
-
 add a nice little account page.
 
 update settings page
 
 make the text more readable esspecially if the colour of the spool is white, do the same for the icons
-
-fix the OTA screen text - hopefully
