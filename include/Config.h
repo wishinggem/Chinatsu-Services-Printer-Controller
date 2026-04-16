@@ -40,6 +40,8 @@ struct PrinterLiveData {
     String status = "OFFLINE";
     AMSTray ams[4]; // Store up to 4 slots
     String amsHumidity = "0"; 
+    String amsDryTime = "0";
+    String amsDryTemp = "0";
 };
 
 struct AppConfig {

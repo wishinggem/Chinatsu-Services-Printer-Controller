@@ -39,6 +39,17 @@ uint16_t PageMain::hexToRGB565(String hex) {
     return _tft->color565((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
 }
 
+bool PageMain::isColorLight(String hex) {
+    if (hex.length() < 6) return false; // Default to dark for invalid hex
+    long rgb = strtol(hex.substring(0, 6).c_str(), NULL, 16);
+    int r = (rgb >> 16) & 0xFF;
+    int g = (rgb >> 8) & 0xFF;
+    int b = rgb & 0xFF;
+    // Using luminance formula to determine brightness
+    // Threshold can be adjusted, 186 is a common value for this.
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 186;
+}
+
 void PageMain::drawGearIcon(int x, int y, uint16_t color) {
     _tft->fillCircle(x, y, 11, color);
     _tft->fillCircle(x, y, 5, _tft->color565(30, 41, 59)); // Inner hole matches button background
@@ -136,6 +147,9 @@ void PageMain::onEnter() {
     
     lastActiveTray = -2;
     lastStatus = "FORCE";
+    lastIsDrying = false;
+    lastDryTime = "FORCE";
+    lastDryTemp = "FORCE";
 
     // Draw Bottom Navigation Buttons
     _tft->fillRoundRect(10, 270, 90, 40, 8, _tft->color565(56, 189, 248)); // AMS is active
@@ -164,6 +178,85 @@ void PageMain::drawLiveData() {
         drawLightIcon(40, 25, TFT_WHITE, chamberLightOn);
     }
 
+    bool isDrying = String(config.liveData.amsDryTime).toInt() > 0;
+
+    if (isDrying != lastIsDrying) {
+        lastIsDrying = isDrying;
+        // Clear the AMS area strictly
+        _tft->fillRect(10, 55, 460, 200, _tft->color565(15, 23, 42)); 
+        
+        int startX, yPos, width, height, spacing;
+        if (isDrying) {
+            startX = 30;
+            yPos = 110;
+            width = 62;
+            height = 120;
+            spacing = 14;
+            
+            // Draw heating box
+            _tft->drawRoundRect(14, 55, 452, 195, 12, _tft->color565(245, 158, 11)); // Amber/Orange border
+            _tft->fillRoundRect(15, 56, 450, 193, 12, _tft->color565(30, 15, 15)); // slight warm tint
+            
+            // Draw Drying Title
+            _tft->setTextColor(_tft->color565(245, 158, 11), _tft->color565(30, 15, 15));
+            _tft->setTextDatum(TL_DATUM);
+            _tft->drawString("AMS Drying Active", 30, 68, 4);
+            
+            lastDryTime = "FORCE";
+            lastDryTemp = "FORCE";
+        } else {
+            startX = 24;
+            yPos = 65;
+            width = 96;
+            height = 180;
+            spacing = 16;
+        }
+        for(int i=0; i<4; i++) {
+            slots[i] = {startX + i*(width+spacing), yPos, width, height, "Slot " + String(i+1), TFT_WHITE};
+            lastAms[i].type = "FORCE_UPDATE"; // force redraw
+        }
+    }
+    
+    if (isDrying) {
+        String currentDryTime = String(config.liveData.amsDryTime);
+        String currentDryTemp = String(config.liveData.amsDryTemp);
+        if (lastDryTime != currentDryTime || lastDryTemp != currentDryTemp) {
+            lastDryTime = currentDryTime;
+            lastDryTemp = currentDryTemp;
+            
+            // Convert the total minutes into a formatted string (d, h, m)
+            int totalMins = currentDryTime.toInt();
+            String formattedTime = "";
+            
+            if (totalMins >= 1440) {
+                int d = totalMins / 1440;
+                int h = (totalMins % 1440) / 60;
+                formattedTime = String(d) + "d " + String(h) + "h";
+            } else if (totalMins >= 60) {
+                int h = totalMins / 60;
+                int m = totalMins % 60;
+                formattedTime = String(h) + "h " + String(m) + "m";
+            } else {
+                formattedTime = String(totalMins) + "m";
+            }
+            
+            _tft->fillRect(340, 60, 120, 180, _tft->color565(30, 15, 15)); // clear right side
+            
+            _tft->setTextColor(_tft->color565(148, 163, 184), _tft->color565(30, 15, 15));
+            _tft->setTextDatum(MC_DATUM);
+            _tft->drawString("Time Left", 400, 110, 2);
+            _tft->setTextColor(TFT_WHITE, _tft->color565(30, 15, 15));
+
+            // Draw the newly formatted time instead of the raw hours
+            _tft->drawString(formattedTime, 400, 135, 4);
+            
+            _tft->setTextColor(_tft->color565(148, 163, 184), _tft->color565(30, 15, 15));
+            _tft->drawString("Temp", 400, 180, 2);
+            _tft->setTextColor(TFT_WHITE, _tft->color565(30, 15, 15));
+            _tft->drawString(lastDryTemp + "C", 400, 205, 4);
+        }
+    }
+
     bool activeTrayChanged = (lastActiveTray != amsActiveTray) || (lastStatus != config.liveData.status);
     if (activeTrayChanged) {
         lastActiveTray = amsActiveTray;
@@ -177,8 +270,9 @@ void PageMain::drawLiveData() {
             lastRemain[i] = amsRemain[i];
             lastBrand[i] = amsBrand[i];
             
+            uint16_t slotBgColor = isDrying ? _tft->color565(30, 15, 15) : _tft->color565(15, 23, 42);
             // Clear the entire slot background + flanges area (expanded for highlight)
-            _tft->fillRect(slots[i].x - 10, slots[i].y - 8, slots[i].w + 20, slots[i].h + 16, _tft->color565(15, 23, 42));
+            _tft->fillRect(slots[i].x - 10, slots[i].y - 8, slots[i].w + 20, slots[i].h + 16, slotBgColor);
 
             bool isPrinting = (config.liveData.status == "Printing" || config.liveData.status == "Preparing");
             uint16_t flangeColor = _tft->color565(51, 65, 85); // Default Slate 600
@@ -194,15 +288,19 @@ void PageMain::drawLiveData() {
                 _tft->fillRoundRect(slots[i].x, slots[i].y, slots[i].w, slots[i].h, 12, _tft->color565(20, 20, 20));
                 _tft->fillRect(slots[i].x + 8, slots[i].y + 6, slots[i].w - 16, slots[i].h - 12, _tft->color565(30, 41, 59));
                 
-                for (int d = slots[i].y + 20; d < slots[i].y + slots[i].h - 10; d += 20) {
+                for (int d = slots[i].y + 20; d < slots[i].y + slots[i].h - 10; d += (isDrying ? 15 : 20)) {
                     _tft->drawFastHLine(slots[i].x + 8, d, slots[i].w - 16, _tft->color565(51, 65, 85));
                 }
-                _tft->setTextColor(_tft->color565(148, 163, 184), _tft->color565(30, 41, 59));
+                _tft->setTextColor(_tft->color565(148, 163, 184), _tft->color565(30, 41, 59)); // Matches inner background
                 _tft->drawString("EMPTY", slots[i].x + slots[i].w/2, slots[i].y + slots[i].h/2, 2);
                 continue;
             }
             
             uint16_t color = hexToRGB565(config.liveData.ams[i].color);
+            bool lightBg = isColorLight(config.liveData.ams[i].color);
+            uint16_t textColor = lightBg ? TFT_DARKGREY : TFT_WHITE;
+            uint16_t shadowColor = lightBg ? TFT_WHITE : TFT_DARKGREY;
+
             
             // Draw Spool Flanges
             _tft->fillRoundRect(slots[i].x - 6, slots[i].y - 4, 12, slots[i].h + 8, 6, flangeColor);
@@ -257,25 +355,28 @@ void PageMain::drawLiveData() {
                 start = end + 1;
             }
             
-            int yCursor = slots[i].y + slots[i].h / 2 - ((lines.size() - 1) * 25) / 2;
+            int textFont = isDrying ? 2 : 4;
+            int textStep = isDrying ? 15 : 25;
+            int yCursor = slots[i].y + slots[i].h / 2 - ((lines.size() - 1) * textStep) / 2;
             yCursor -= 8; // Shift up slightly to leave room for percentage at bottom
             for (size_t j = 0; j < lines.size(); j++) {
-                _tft->setTextColor(TFT_BLACK); // Drop-shadow
-                _tft->drawString(lines[j], slots[i].x + slots[i].w/2 + 2, yCursor + 2, 4);
-                _tft->setTextColor(TFT_WHITE); // Foreground
-                _tft->drawString(lines[j], slots[i].x + slots[i].w/2, yCursor, 4);
-                yCursor += 25;
+                _tft->setTextColor(shadowColor); // Drop-shadow
+                _tft->drawString(lines[j], slots[i].x + slots[i].w/2 + 1, yCursor + 1, textFont);
+                _tft->setTextColor(textColor); // Foreground
+                _tft->drawString(lines[j], slots[i].x + slots[i].w/2, yCursor, textFont);
+                yCursor += textStep;
             }
             
             // Draw drop-shadowed logo dynamically below the text
-            _tft->drawXBitmap(slots[i].x + slots[i].w/2 - 8 + 1, yCursor + 2 + 1, selectedLogo, 16, 16, TFT_BLACK);
-            _tft->drawXBitmap(slots[i].x + slots[i].w/2 - 8, yCursor + 2, selectedLogo, 16, 16, TFT_WHITE);
+            _tft->drawXBitmap(slots[i].x + slots[i].w/2 - 8 + 1, yCursor + 2 + 1, selectedLogo, 16, 16, shadowColor);
+            _tft->drawXBitmap(slots[i].x + slots[i].w/2 - 8, yCursor + 2, selectedLogo, 16, 16, textColor);
 
             if (isBambu) {
-                _tft->setTextColor(TFT_BLACK);
-                _tft->drawString(String(pct) + "%", slots[i].x + slots[i].w/2 + 2, slots[i].y + slots[i].h - 20 + 2, 2);
-                _tft->setTextColor(TFT_WHITE);
-                _tft->drawString(String(pct) + "%", slots[i].x + slots[i].w/2, slots[i].y + slots[i].h - 20, 2);
+                int pctY = slots[i].y + slots[i].h - (isDrying ? 14 : 20);
+                _tft->setTextColor(shadowColor);
+                _tft->drawString(String(pct) + "%", slots[i].x + slots[i].w/2 + 1, pctY + 1, 2);
+                _tft->setTextColor(textColor);
+                _tft->drawString(String(pct) + "%", slots[i].x + slots[i].w/2, pctY, 2);
             }
         }
     }

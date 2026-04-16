@@ -1,5 +1,5 @@
 add a nice little account page.
 
-update settings page
+update settings page to look better and be more segmented
 
-make the text more readable esspecially if the colour of the spool is white, do the same for the icons
+on the print monitor screen make the screen show a message when no print is in progress, will still show the stats tho

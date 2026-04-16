@@ -499,6 +499,12 @@ void BambuMQTT::parseStatusPayload(byte* payload, unsigned int length) {
                     if (amsList[0].containsKey("humidity_raw")) {
                         config.liveData.amsHumidity = amsList[0]["humidity_raw"].as<String>();
                     }
+                    if (amsList[0].containsKey("dry_time")) {
+                        config.liveData.amsDryTime = amsList[0]["dry_time"].as<String>();
+                    }
+                    if (amsList[0].containsKey("temp")) {
+                        config.liveData.amsDryTemp = amsList[0]["temp"].as<String>();
+                    }
                     JsonArray trays = amsList[0]["tray"];
                     for (JsonObject tray : trays) {
                         if (tray.containsKey("id")) {

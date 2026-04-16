@@ -167,12 +167,17 @@ private:
     int lastActiveTray;
     String lastStatus;
     
+    bool lastIsDrying;
+    String lastDryTime;
+    String lastDryTemp;
+    
     bool notificationDrawn = false;
     unsigned long notificationTime = 0;
 
     unsigned long lastUpdate;
     void drawLiveData();
     uint16_t hexToRGB565(String hex);
+    bool isColorLight(String hex);
     void drawGearIcon(int x, int y, uint16_t color);
     void drawDropIcon(int x, int y, uint16_t color);
     void drawBellIcon(int x, int y, uint16_t color, int count);
