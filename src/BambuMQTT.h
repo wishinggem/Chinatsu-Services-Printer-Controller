@@ -33,7 +33,9 @@ extern String printGcodeFile;
 extern bool hasAutoSwitchedToPrint;
 extern int amsRemain[4];
 extern String amsBrand[4];
+extern int amsActiveTray;
 extern bool dumpNextMqttPacket;
+extern String lastRawMqttMessage;
 
 class BambuMQTT {
 public:

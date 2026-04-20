@@ -2,10 +2,8 @@
 #include "PageManager.h"
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>
 
 extern AsyncWebServer server;
-static bool otaHandlersAttached = false;
 
 TFT_eSPI* PageOTA::_ota_tft = nullptr;
 bool PageOTA::_update_started = false;
@@ -50,19 +48,14 @@ void PageOTA::onEnter() {
     // Set up the progress callback
     Update.onProgress(drawProgress);
 
-    // Start the web server just for this page
-    if (!otaHandlersAttached) {
-        AsyncElegantOTA.begin(&server);
-        otaHandlersAttached = true;
-    }
-    server.begin();
+    if (!config.haReceiveEnabled) server.begin();
 }
 
 void PageOTA::onExit() {
     // Clear the progress callback when leaving the page
     Update.onProgress(nullptr);
     _ota_tft = nullptr;
-    server.end(); // Stop the web server
+    if (!config.haReceiveEnabled) server.end(); // Stop the web server if not used by HA
 }
 
 void PageOTA::drawProgress(size_t progress, size_t total) {

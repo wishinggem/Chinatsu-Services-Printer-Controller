@@ -1,0 +1,18 @@
+bambu_send_brightness:
+  alias: "Bambu Send Brightness"
+  sequence:
+    - service: rest_command.bambu_set_brightness
+      data:
+        # Convert the 0-100% UI value back to 0-255 for the ESP32
+        value: "{{ (states('input_number.bambu_screen_brightness') | float * 2.55) | int }}"
+    - delay: "00:00:02"
+    - service: rest_command.bambu_force_sync
+
+bambu_send_timeout:
+  alias: "Bambu Send Timeout"
+  sequence:
+    - service: rest_command.bambu_set_timeout
+      data:
+        value: "{{ states('input_number.bambu_screen_timeout') | int }}"
+    - delay: "00:00:02"
+    - service: rest_command.bambu_force_sync

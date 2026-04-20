@@ -1,0 +1,214 @@
+# ---------------------------------------------------------
+# Define the Input Helpers
+# ---------------------------------------------------------
+input_number:
+  bambu_screen_brightness:
+    name: Bambu Screen Brightness
+    min: 0
+    max: 100
+    step: 1
+    icon: mdi:brightness-6
+    unit_of_measurement: "%"
+  bambu_screen_timeout:
+    name: Bambu Screen Timeout
+    min: 0
+    max: 60
+    step: 1
+    icon: mdi:timer-outline
+    unit_of_measurement: "min"
+
+template:
+  # ---------------------------------------------------------
+  # Command Helpers
+  # ---------------------------------------------------------
+  - button:
+      - name: "Bambu Toggle Light and Sync"
+        icon: "mdi:lightbulb-sync"
+        press:
+          - service: rest_command.bambu_toggle_light
+          - delay: "00:00:02"
+          - service: rest_command.bambu_force_sync
+
+      # Derived from chi_bambu_remaining_mins — dynamically shows days / hours / mins
+      - name: "CHI Bambu Remaining Time Formatted"
+        icon: mdi:timer-sand
+        state: >
+          {% set mins = states('sensor.chi_bambu_remaining_mins') | int(0) %}
+          {% if mins <= 0 %}
+            Done
+          {% elif mins < 60 %}
+            {{ mins }}m
+          {% elif mins < 1440 %}
+            {{ mins // 60 }}h {{ mins % 60 }}m
+          {% else %}
+            {{ mins // 1440 }}d {{ (mins % 1440) // 60 }}h {{ mins % 60 }}m
+          {% endif %}
+
+  # ---------------------------------------------------------
+  # Webhook-Triggered Sensors (CHI Bambu)
+  # ---------------------------------------------------------
+  - trigger:
+      - platform: webhook
+        webhook_id: "bambu_controller_push"
+        local_only: true
+    sensor:
+      # Account Info
+      - name: "CHI Bambu Username"
+        state: "{{ trigger.json.parsed_data.account_info.username | default('Unknown', true) }}"
+        icon: mdi:account
+
+      # Printer Info
+      - name: "CHI Bambu Printer Name"
+        state: "{{ trigger.json.parsed_data.printer_info.name | default('Unavailable', true) }}"
+        icon: mdi:printer-3d
+      - name: "CHI Bambu Light Status"
+        state: "{{ trigger.json.parsed_data.printer_info.light_status | default('off', true) }}"
+        icon: mdi:lightbulb-outline
+      - name: "CHI Bambu WiFi SSID"
+        state: "{{ trigger.json.parsed_data.printer_info.wifi_ssid | default('Disconnected', true) }}"
+        icon: mdi:wifi
+
+      # Printing Info
+      - name: "CHI Bambu Current Layer"
+        state: "{{ trigger.json.parsed_data.printing_info.layer | default('0', true) }}"
+        icon: mdi:layers
+      - name: "CHI Bambu Total Layers"
+        state: "{{ trigger.json.parsed_data.printing_info.total_layers | default('0', true) }}"
+        icon: mdi:layers-triple
+      - name: "CHI Bambu Remaining Mins"
+        state: "{{ trigger.json.parsed_data.printing_info.remaining_mins | default('0', true) }}"
+        unit_of_measurement: "min"
+        icon: mdi:timer-sand
+      - name: "CHI Bambu Print Status"
+        state: "{{ trigger.json.parsed_data.printing_info.status | default('Idle', true) }}"
+        icon: mdi:printer-3d
+      - name: "CHI Bambu Print Progress"
+        state: "{{ trigger.json.parsed_data.printing_info.progress | default('0', true) }}"
+        unit_of_measurement: "%"
+        icon: mdi:progress-check
+
+      # Speed: JSON sends an integer — map to human-readable label
+      - name: "CHI Bambu Print Speed"
+        icon: mdi:speedometer
+        state: >
+          {% set s = trigger.json.parsed_data.printing_info.speed | int(0) %}
+          {% if s == 1 %}Silent (50%)
+          {% elif s == 2 %}Standard (100%)
+          {% elif s == 3 %}Sport (124%)
+          {% elif s == 4 %}Ludicrous (166%)
+          {% else %}Unknown{% endif %}
+
+      - name: "CHI Bambu Nozzle Temp"
+        state: "{{ (trigger.json.parsed_data.printing_info.nozzle_temp | default('0', true)) | float(0) | round(1) }}"
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer
+        device_class: temperature
+      # JSON field is "nozzle_target", not "nozzle_target_temp"
+      - name: "CHI Bambu Target Nozzle Temp"
+        state: "{{ (trigger.json.parsed_data.printing_info.nozzle_target | default('0', true)) | float(0) | round(1) }}"
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer-chevron-up
+        device_class: temperature
+      - name: "CHI Bambu Bed Temp"
+        state: "{{ (trigger.json.parsed_data.printing_info.bed_temp | default('0', true)) | float(0) | round(1) }}"
+        unit_of_measurement: "°C"
+        icon: mdi:heating-coil
+        device_class: temperature
+      # JSON field is "bed_target", not "bed_target_temp"
+      - name: "CHI Bambu Target Bed Temp"
+        state: "{{ (trigger.json.parsed_data.printing_info.bed_target | default('0', true)) | float(0) | round(1) }}"
+        unit_of_measurement: "°C"
+        icon: mdi:heating-coil
+        device_class: temperature
+      - name: "CHI Bambu Part Fan Speed"
+        state: "{{ trigger.json.parsed_data.printing_info.fan_part | default('0', true) }}"
+        unit_of_measurement: "%"
+        icon: mdi:fan
+      - name: "CHI Bambu Aux Fan Speed"
+        state: "{{ trigger.json.parsed_data.printing_info.fan_aux | default('0', true) }}"
+        unit_of_measurement: "%"
+        icon: mdi:fan
+      - name: "CHI Bambu Chamber Fan Speed"
+        state: "{{ trigger.json.parsed_data.printing_info.fan_chamber | default('0', true) }}"
+        unit_of_measurement: "%"
+        icon: mdi:fan
+
+      # AMS Info
+      - name: "CHI Bambu AMS Humidity"
+        state: "{{ trigger.json.parsed_data.ams_info.humidity | default('0', true) }}"
+        unit_of_measurement: "%"
+        icon: mdi:water-percent
+      # JSON has no "drying" field — derive from dry_time > 0
+      - name: "CHI Bambu AMS Drying"
+        state: "{{ 'yes' if (trigger.json.parsed_data.ams_info.dry_time | default('0', true) | int(0)) > 0 else 'no' }}"
+        icon: mdi:weather-sunny
+      - name: "CHI Bambu AMS Drying Time"
+        state: "{{ trigger.json.parsed_data.ams_info.dry_time | default('0', true) }}"
+        unit_of_measurement: "min"
+        icon: mdi:timer
+      - name: "CHI Bambu AMS Drying Heat"
+        state: "{{ (trigger.json.parsed_data.ams_info.dry_temp | default('0', true)) | float(0) | round(1) }}"
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer-high
+
+      # AMS Trays — color stored as RRGGBBAA hex string (e.g. "00AE42FF")
+      - name: "CHI Bambu AMS Tray 1 Material"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[0].type | default('Empty', true) }}"
+      - name: "CHI Bambu AMS Tray 1 Brand"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[0].brand | default('-', true) }}"
+      - name: "CHI Bambu AMS Tray 1 Color"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[0].color | default('333333FF', true) }}"
+      - name: "CHI Bambu AMS Tray 1 Percent"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[0].remain | default('-1', true) }}"
+
+      - name: "CHI Bambu AMS Tray 2 Material"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[1].type | default('Empty', true) }}"
+      - name: "CHI Bambu AMS Tray 2 Brand"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[1].brand | default('-', true) }}"
+      - name: "CHI Bambu AMS Tray 2 Color"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[1].color | default('333333FF', true) }}"
+      - name: "CHI Bambu AMS Tray 2 Percent"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[1].remain | default('-1', true) }}"
+
+      - name: "CHI Bambu AMS Tray 3 Material"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[2].type | default('Empty', true) }}"
+      - name: "CHI Bambu AMS Tray 3 Brand"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[2].brand | default('-', true) }}"
+      - name: "CHI Bambu AMS Tray 3 Color"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[2].color | default('333333FF', true) }}"
+      - name: "CHI Bambu AMS Tray 3 Percent"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[2].remain | default('-1', true) }}"
+
+      - name: "CHI Bambu AMS Tray 4 Material"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[3].type | default('Empty', true) }}"
+      - name: "CHI Bambu AMS Tray 4 Brand"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[3].brand | default('-', true) }}"
+      - name: "CHI Bambu AMS Tray 4 Color"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[3].color | default('333333FF', true) }}"
+      - name: "CHI Bambu AMS Tray 4 Percent"
+        state: "{{ trigger.json.parsed_data.ams_info.trays[3].remain | default('-1', true) }}"
+
+rest_command:
+  bambu_toggle_light:
+    url: "http://<ESP32_IP_ADDRESS>/api/command"
+    method: POST
+    content_type: "application/json"
+    payload: '{"action":"toggle_light"}'
+
+  bambu_force_sync:
+    url: "http://<ESP32_IP_ADDRESS>/api/command"
+    method: POST
+    content_type: "application/json"
+    payload: '{"action":"force_sync"}'
+
+  bambu_set_brightness:
+    url: "http://<ESP32_IP_ADDRESS>/api/command"
+    method: POST
+    content_type: "application/json"
+    payload: '{"action":"set_brightness","value":{{ value }}}'
+
+  bambu_set_timeout:
+    url: "http://<ESP32_IP_ADDRESS>/api/command"
+    method: POST
+    content_type: "application/json"
+    payload: '{"action":"set_timeout","value":{{ value }}}'

@@ -9,7 +9,7 @@ public:
     
 private:
     Button btnBack, btnWipe, btnSwitchPrinter, btnLogout, btnSelectWifi, btnOTAUpdate;
-    Button btnBrightUp, btnBrightDown, btnTimeUp, btnTimeDown;
+    Button btnBrightUp, btnBrightDown, btnTimeUp, btnTimeDown, btnHomeAssistant;
     Button btnConfirmWipe, btnCancelWipe, btnSetIP, btnSetCode, btnDumpMqtt;
 
     void drawValues();

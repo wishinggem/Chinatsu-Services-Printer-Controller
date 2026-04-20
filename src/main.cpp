@@ -7,6 +7,7 @@
 #include "pages/PageManager.h"
 #include "BambuCloudAPI.h"
 #include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
 #include "BambuMQTT.h"
 
 // ==========================================
@@ -25,6 +26,8 @@ PageManager uiManager(&tft, &touch);
 BambuCloudAPI cloudApi;
 AsyncWebServer server(80);
 BambuMQTT printerMqtt;
+#include "HomeAssistant.h"
+HomeAssistant homeAssistant;
 
 void factoryReset() {
     Serial.println("\n[!] FACTORY RESET INITIATED FROM UI...");
@@ -48,6 +51,13 @@ void saveSettings() {
     prefs.putString("uid", config.userId);
     prefs.putInt("bright", config.brightness);
     prefs.putInt("timeout", config.screenTimeout);
+
+    prefs.putString("ha_ip", config.haIp);
+    prefs.putInt("ha_port", config.haPort);
+    prefs.putString("ha_end", config.haEndpoint);
+    prefs.putBool("ha_send_en", config.haSendEnabled);
+    prefs.putInt("ha_send_int", config.haSendInterval);
+    prefs.putBool("ha_recv_en", config.haReceiveEnabled);
     
     if (config.activePrinter.serial != "") {
         prefs.putString("p_name", config.activePrinter.name);
@@ -112,6 +122,16 @@ void setup() {
         config.activePrinter.serial = prefs.getString("p_serial", "");
         config.activePrinter.accessCode = prefs.getString("p_code", "");
 
+        config.haIp = prefs.getString("ha_ip", "");
+        config.haPort = prefs.getInt("ha_port", 8123);
+        config.haEndpoint = prefs.getString("ha_end", "");
+        config.haSendEnabled = prefs.getBool("ha_send_en", false);
+        config.haSendInterval = prefs.getInt("ha_send_int", 5);
+        config.haReceiveEnabled = prefs.getBool("ha_recv_en", false);
+        config.tempHaPort = String(config.haPort);
+        config.tempHaInterval = String(config.haSendInterval);
+
+
         cloudApi.setAuthToken(config.cloudToken);
         
         tft.fillScreen(TFT_BLACK);
@@ -136,6 +156,12 @@ void setup() {
             Serial.println(" Connected!");
             Serial.print("IP Address: ");
             Serial.println(WiFi.localIP());
+
+            AsyncElegantOTA.begin(&server);
+            homeAssistant.begin(&server);
+            if (config.haReceiveEnabled) {
+                server.begin();
+            }
             
             if (config.activePrinter.serial != "") {
                 uiManager.switchPage(STATE_MAIN_PAGE);
@@ -186,6 +212,7 @@ void loop() {
         } else {
             lastWifiCheck = millis(); // Keep timer reset while connected
             printerMqtt.loop();
+            homeAssistant.loop();
         }
     }
 }

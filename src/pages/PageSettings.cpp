@@ -7,10 +7,6 @@
 #include "../BambuMQTT.h"
 extern BambuMQTT printerMqtt;
 
-#ifndef STATE_OTA_UPDATE
-#define STATE_OTA_UPDATE 13
-#endif
-
 PageSettings::PageSettings(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manager) 
     : Page(tft, touch, manager) {
     
@@ -22,10 +18,13 @@ PageSettings::PageSettings(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manage
     
     btnDumpMqtt   = {380, 140, 85, 40, "Dump MQTT", _tft->color565(71, 85, 105)};
     
-    btnSwitchPrinter = {15,  210, 105, 40, "Printer", _tft->color565(37, 99, 235)};
-    btnSelectWifi    = {130, 210, 105, 40, "WiFi",    _tft->color565(147, 51, 234)};
-    btnLogout        = {245, 210, 105, 40, "Logout",  _tft->color565(245, 158, 11)};
-    btnOTAUpdate     = {360, 210, 105, 40, "OTA Update", _tft->color565(20, 83, 45)};
+    int btn_w = 80;
+    int btn_s = 15;
+    btnSwitchPrinter = {15, 210, btn_w, 40, "Printer", _tft->color565(37, 99, 235)};
+    btnSelectWifi    = {15 + btn_w + btn_s, 210, btn_w, 40, "WiFi",    _tft->color565(147, 51, 234)};
+    btnLogout        = {15 + 2*(btn_w + btn_s), 210, btn_w, 40, "Logout",  _tft->color565(245, 158, 11)};
+    btnOTAUpdate     = {15 + 3*(btn_w + btn_s), 210, btn_w, 40, "OTA", _tft->color565(20, 83, 45)};
+    btnHomeAssistant = {15 + 4*(btn_w + btn_s), 210, btn_w, 40, "HA", _tft->color565(6, 182, 212)};
 
     btnBack          = {15,  270, 140, 40, "<- Back", _tft->color565(20, 83, 45)};
     btnSetIP         = {165, 270, 145, 40, "Set IP",  _tft->color565(71, 85, 105)};
@@ -57,13 +56,13 @@ void PageSettings::onEnter() {
     for (int i = 0; i < config.activePrinter.accessCode.length(); i++) maskedCode += "*";
     btnSetCode.label = config.activePrinter.accessCode == "" ? "Set Access Code" : "Code: " + maskedCode;
 
-    Button btns[] = {btnBrightDown, btnBrightUp, btnTimeDown, btnTimeUp, btnSwitchPrinter, btnSelectWifi, btnLogout, btnOTAUpdate, btnWipe, btnBack, btnSetIP, btnSetCode, btnDumpMqtt};
+    Button btns[] = {btnBrightDown, btnBrightUp, btnTimeDown, btnTimeUp, btnSwitchPrinter, btnSelectWifi, btnLogout, btnOTAUpdate, btnHomeAssistant, btnWipe, btnBack, btnSetIP, btnSetCode, btnDumpMqtt};
     for (Button b : btns) {
         _tft->fillRect(b.x, b.y, b.w, b.h, b.color);
         _tft->drawRect(b.x, b.y, b.w, b.h, TFT_WHITE);
         _tft->setTextColor(TFT_WHITE, b.color); // FIXES BLACK BOXES IN BUTTONS!
         
-        int font = (b.label.length() > 8) ? 2 : 4;
+        int font = (b.label.length() > 7) ? 2 : 4;
         if (b.label == "WIPE" || b.label == "Dump MQTT" || b.label.startsWith("IP:") || b.label.startsWith("Code:") || b.label.startsWith("Set ") || b.label == "OTA Update") font = 2;
         
         _tft->drawString(b.label, b.x + b.w/2, b.y + b.h/2, font);
@@ -146,6 +145,8 @@ void PageSettings::onUpdate() {
             config.cloudToken = ""; config.userEmail = ""; config.userPassword = ""; config.userId = ""; saveSettings(); _manager->switchPage(STATE_LOGIN);
         } else if (btnOTAUpdate.isTouched(x, y)) {
             _manager->switchPage(static_cast<AppState>(STATE_OTA_UPDATE));
+        } else if (btnHomeAssistant.isTouched(x, y)) {
+            _manager->switchPage(static_cast<AppState>(STATE_HOMEASSISTANT));
         } else if (btnWipe.isTouched(x, y)) {
             _showModal = true; drawModal();
         }

@@ -2,10 +2,6 @@
 #include "Page.h"
 #include <vector>
 
-#ifndef STATE_NOTIFICATIONS
-#define STATE_NOTIFICATIONS 10
-#endif
-
 class PageNotifications : public Page {
 public:
     PageNotifications(TFT_eSPI* tft, TAMC_GT911* touch, PageManager* manager);

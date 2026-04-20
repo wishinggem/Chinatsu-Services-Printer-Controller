@@ -2,14 +2,6 @@
 #include "PageManager.h"
 #include "../BambuMQTT.h"
 
-#ifndef STATE_NOTIFICATIONS
-#define STATE_NOTIFICATIONS 10
-#endif
-
-#ifndef STATE_PRINT_MONITOR
-#define STATE_PRINT_MONITOR 11
-#endif
-
 extern BambuMQTT printerMqtt;
 extern bool chamberLightOn;
 extern int amsRemain[4];

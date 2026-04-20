@@ -16,7 +16,12 @@ enum AppState {
     STATE_LOGIN,
     STATE_PRINTER_SELECT,
     STATE_MAIN_PAGE,
-    STATE_SETTINGS
+    STATE_SETTINGS,
+    STATE_NOTIFICATIONS,
+    STATE_PRINT_MONITOR,
+    STATE_AMS_PAGE,
+    STATE_OTA_UPDATE,
+    STATE_HOMEASSISTANT
 };
 
 struct PrinterInfo {
@@ -58,6 +63,15 @@ struct AppConfig {
     String wifiSSID;
     String wifiPass;
     String userId;
+    
+    String haIp;
+    int haPort = 8123;
+    String haEndpoint;
+    bool haSendEnabled = false;
+    int haSendInterval = 5;
+    bool haReceiveEnabled = false;
+    String tempHaPort;
+    String tempHaInterval;
     
     int brightness = 255;
     int screenTimeout = 5; // minutes (0 = never)

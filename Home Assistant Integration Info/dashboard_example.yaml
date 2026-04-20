@@ -1,0 +1,693 @@
+views:
+  - title: Printers
+    type: panel
+    cards:
+      - type: custom:stack-in-card
+        card_mod:
+          style: |
+            ha-card {
+              background: none !important;
+              box-shadow: none !important;
+              border: none !important;
+              max-width: 1600px;
+              margin: 0 auto;
+              padding: 12px;
+            }
+        cards:
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:stack-in-card
+                card_mod:
+                  style: |
+                    ha-card {
+                      padding: 12px;
+                      background: var(--card-background-color);
+                      border: none !important;
+                      max-width: 100%;
+                      margin: 0 auto;
+                    }
+                cards:
+                  - type: custom:button-card
+                    custom_fields:
+                      header: |
+                        [[[
+                          var n = states['sensor.chi_bambu_printer_name'];
+                          var name = (n && n.state && n.state !== 'unknown') ? n.state : 'Printer Status';
+                          return `<div style="display: flex; justify-content: flex-start; align-items: center; padding-bottom: 10px; width: 100%;">
+                                    <h1 style="margin: 0; text-align: left; color: var(--primary-text-color);">${name}</h1>
+                                    <img src="https://portal.bblmw.com/p1/p1s-footer-8b1ba6b450474.png" style="height: 45px; width: 45px; object-fit: contain; margin-left: 15px;" />
+                                  </div>`;
+                        ]]]
+                    styles:
+                      grid:
+                        - grid-template-areas: '"header"'
+                        - grid-template-columns: 1fr
+                      card:
+                        - background: none
+                        - box-shadow: none
+                        - border: none
+                        - cursor: default
+                        - padding: 0
+                      custom_fields:
+                        header:
+                          - justify-self: start
+                          - width: 100%
+                  - type: conditional
+                    conditions:
+                      - entity: sensor.chi_bambu_printer_name
+                        state: Unavailable
+                    card:
+                      type: markdown
+                      card_mod:
+                        style: >-
+                          ha-card { background: none !important; box-shadow:
+                          none !important; border: none !important; }
+                      content: >-
+                        <div style="text-align: center; padding: 30px; color:
+                        #ff5252;">
+                          <ha-icon icon="mdi:printer-3d-nozzle-alert" style="--mdc-icon-size: 64px;"></ha-icon>
+                          <h2>Printer Unavailable</h2>
+                          <p>Awaiting data from ESP32. A sync command was sent at startup.</p>
+                        </div>
+                  - type: conditional
+                    conditions:
+                      - entity: sensor.chi_bambu_printer_name
+                        state_not: Unavailable
+                    card:
+                      type: vertical-stack
+                      cards:
+                        - type: horizontal-stack
+                          cards:
+                            - type: custom:stack-in-card
+                              card_mod:
+                                style: |
+                                  ha-card {
+                                    box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
+                                    border: 1px solid rgba(128,128,128,0.2) !important;
+                                    border-radius: 12px !important;
+                                    background: rgba(120,120,120,0.05) !important;
+                                    margin: 4px !important;
+                                    padding: 8px !important;
+                                    min-height: 318px;
+                                  }
+                              cards:
+                                - type: markdown
+                                  content: '### AMS Info'
+                                  card_mod:
+                                    style: >-
+                                      ha-card { background: none !important;
+                                      box-shadow: none !important; border: none
+                                      !important; padding-bottom: 0 !important;
+                                      margin-bottom: 8px !important; }
+                                - type: grid
+                                  columns: 4
+                                  square: false
+                                  cards:
+                                    - type: custom:button-card
+                                      entity: sensor.chi_bambu_ams_tray_1_percent
+                                      icon: mdi:spool
+                                      show_name: true
+                                      show_label: true
+                                      show_state: true
+                                      name: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_1_material'];
+                                        return (e && e.state && e.state !==
+                                        'unknown') ? e.state : 'Empty'; ]]]
+                                      label: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_1_brand'];
+                                        return (e && e.state && e.state !==
+                                        'unknown') ? e.state : '-'; ]]]
+                                      state_display: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_1_percent'];
+                                        var pct = e ? e.state : 'unknown';
+                                        return (pct === '-1' || pct ===
+                                        'unknown' || pct === '') ? '—' : pct +
+                                        '%'; ]]]
+                                      custom_fields:
+                                        color_dot: |
+                                          [[[
+                                            var e = states['sensor.chi_bambu_ams_tray_1_color'];
+                                            var raw = (e && e.state && e.state !== 'unknown') ? e.state.trim() : '555555FF';
+                                            var hex = raw.substring(0, 6);
+                                            var bg = (hex === '000000') ? '#222222' : '#' + hex;
+                                            var border = (hex === 'FFFFFF' || hex === 'FFFFFE') ? '2px solid rgba(150,150,150,0.6)' : '2px solid rgba(255,255,255,0.25)';
+                                            return `<div style="width:28px; height:45px; border-radius:6px; background:${bg}; border:${border}; box-shadow:0 1px 4px rgba(0,0,0,0.5); margin:2px auto;"></div>`;
+                                          ]]]
+                                      styles:
+                                        card:
+                                          - height: 160px
+                                          - border-radius: 8px
+                                          - background-color: rgba(0, 0, 0, 0.2)
+                                          - border: 1px solid rgba(128, 128, 128, 0.3)
+                                          - padding: 8px 4px
+                                        grid:
+                                          - grid-template-areas: '"n i" "l l" "color_dot color_dot" "s s"'
+                                          - grid-template-columns: 1fr min-content
+                                          - grid-template-rows: min-content min-content 1fr min-content
+                                        name:
+                                          - font-size: 12px
+                                          - font-weight: bold
+                                          - justify-self: start
+                                        icon:
+                                          - width: 18px
+                                          - color: var(--paper-item-icon-color)
+                                        label:
+                                          - font-size: 10px
+                                          - opacity: 0.7
+                                          - justify-self: start
+                                        custom_fields:
+                                          color_dot:
+                                            - align-self: center
+                                            - padding: 5px 0
+                                    - type: custom:button-card
+                                      entity: sensor.chi_bambu_ams_tray_2_percent
+                                      icon: mdi:spool
+                                      show_name: true
+                                      show_label: true
+                                      show_state: true
+                                      name: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_2_material'];
+                                        return (e && e.state && e.state !==
+                                        'unknown') ? e.state : 'Empty'; ]]]
+                                      label: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_2_brand'];
+                                        return (e && e.state && e.state !==
+                                        'unknown') ? e.state : '-'; ]]]
+                                      state_display: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_2_percent'];
+                                        var pct = e ? e.state : 'unknown';
+                                        return (pct === '-1' || pct ===
+                                        'unknown' || pct === '') ? '—' : pct +
+                                        '%'; ]]]
+                                      custom_fields:
+                                        color_dot: |
+                                          [[[
+                                            var e = states['sensor.chi_bambu_ams_tray_2_color'];
+                                            var raw = (e && e.state && e.state !== 'unknown') ? e.state.trim() : '555555FF';
+                                            var hex = raw.substring(0, 6);
+                                            var bg = (hex === '000000') ? '#222222' : '#' + hex;
+                                            var border = (hex === 'FFFFFF' || hex === 'FFFFFE') ? '2px solid rgba(150,150,150,0.6)' : '2px solid rgba(255,255,255,0.25)';
+                                            return `<div style="width:28px; height:45px; border-radius:6px; background:${bg}; border:${border}; box-shadow:0 1px 4px rgba(0,0,0,0.5); margin:2px auto;"></div>`;
+                                          ]]]
+                                      styles:
+                                        card:
+                                          - height: 160px
+                                          - border-radius: 8px
+                                          - background-color: rgba(0, 0, 0, 0.2)
+                                          - border: 1px solid rgba(128, 128, 128, 0.3)
+                                          - padding: 8px 4px
+                                        grid:
+                                          - grid-template-areas: '"n i" "l l" "color_dot color_dot" "s s"'
+                                          - grid-template-columns: 1fr min-content
+                                          - grid-template-rows: min-content min-content 1fr min-content
+                                        name:
+                                          - font-size: 12px
+                                          - font-weight: bold
+                                          - justify-self: start
+                                        icon:
+                                          - width: 18px
+                                        label:
+                                          - font-size: 10px
+                                          - opacity: 0.7
+                                          - justify-self: start
+                                    - type: custom:button-card
+                                      entity: sensor.chi_bambu_ams_tray_3_percent
+                                      icon: mdi:spool
+                                      show_name: true
+                                      show_label: true
+                                      show_state: true
+                                      name: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_3_material'];
+                                        return (e && e.state && e.state !==
+                                        'unknown') ? e.state : 'Empty'; ]]]
+                                      label: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_3_brand'];
+                                        return (e && e.state && e.state !==
+                                        'unknown') ? e.state : '-'; ]]]
+                                      state_display: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_3_percent'];
+                                        var pct = e ? e.state : 'unknown';
+                                        return (pct === '-1' || pct ===
+                                        'unknown' || pct === '') ? '—' : pct +
+                                        '%'; ]]]
+                                      custom_fields:
+                                        color_dot: |
+                                          [[[
+                                            var e = states['sensor.chi_bambu_ams_tray_3_color'];
+                                            var raw = (e && e.state && e.state !== 'unknown') ? e.state.trim() : '555555FF';
+                                            var hex = raw.substring(0, 6);
+                                            var bg = (hex === '000000') ? '#222222' : '#' + hex;
+                                            var border = (hex === 'FFFFFF' || hex === 'FFFFFE') ? '2px solid rgba(150,150,150,0.6)' : '2px solid rgba(255,255,255,0.25)';
+                                            return `<div style="width:28px; height:45px; border-radius:6px; background:${bg}; border:${border}; box-shadow:0 1px 4px rgba(0,0,0,0.5); margin:2px auto;"></div>`;
+                                          ]]]
+                                      styles:
+                                        card:
+                                          - height: 160px
+                                          - border-radius: 8px
+                                          - background-color: rgba(0, 0, 0, 0.2)
+                                          - border: 1px solid rgba(128, 128, 128, 0.3)
+                                          - padding: 8px 4px
+                                        grid:
+                                          - grid-template-areas: '"n i" "l l" "color_dot color_dot" "s s"'
+                                          - grid-template-columns: 1fr min-content
+                                          - grid-template-rows: min-content min-content 1fr min-content
+                                        name:
+                                          - font-size: 12px
+                                          - font-weight: bold
+                                          - justify-self: start
+                                        icon:
+                                          - width: 18px
+                                        label:
+                                          - font-size: 10px
+                                          - opacity: 0.7
+                                          - justify-self: start
+                                    - type: custom:button-card
+                                      entity: sensor.chi_bambu_ams_tray_4_percent
+                                      icon: mdi:spool
+                                      show_name: true
+                                      show_label: true
+                                      show_state: true
+                                      name: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_4_material'];
+                                        return (e && e.state && e.state !==
+                                        'unknown') ? e.state : 'Empty'; ]]]
+                                      label: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_4_brand'];
+                                        return (e && e.state && e.state !==
+                                        'unknown') ? e.state : '-'; ]]]
+                                      state_display: >
+                                        [[[ var e =
+                                        states['sensor.chi_bambu_ams_tray_4_percent'];
+                                        var pct = e ? e.state : 'unknown';
+                                        return (pct === '-1' || pct ===
+                                        'unknown' || pct === '') ? '—' : pct +
+                                        '%'; ]]]
+                                      custom_fields:
+                                        color_dot: |
+                                          [[[
+                                            var e = states['sensor.chi_bambu_ams_tray_4_color'];
+                                            var raw = (e && e.state && e.state !== 'unknown') ? e.state.trim() : '555555FF';
+                                            var hex = raw.substring(0, 6);
+                                            var bg = (hex === '000000') ? '#222222' : '#' + hex;
+                                            var border = (hex === 'FFFFFF' || hex === 'FFFFFE') ? '2px solid rgba(150,150,150,0.6)' : '2px solid rgba(255,255,255,0.25)';
+                                            return `<div style="width:28px; height:45px; border-radius:6px; background:${bg}; border:${border}; box-shadow:0 1px 4px rgba(0,0,0,0.5); margin:2px auto;"></div>`;
+                                          ]]]
+                                      styles:
+                                        card:
+                                          - height: 160px
+                                          - border-radius: 8px
+                                          - background-color: rgba(0, 0, 0, 0.2)
+                                          - border: 1px solid rgba(128, 128, 128, 0.3)
+                                          - padding: 8px 4px
+                                        grid:
+                                          - grid-template-areas: '"n i" "l l" "color_dot color_dot" "s s"'
+                                          - grid-template-columns: 1fr min-content
+                                          - grid-template-rows: min-content min-content 1fr min-content
+                                        name:
+                                          - font-size: 12px
+                                          - font-weight: bold
+                                          - justify-self: start
+                                        icon:
+                                          - width: 18px
+                                        label:
+                                          - font-size: 10px
+                                          - opacity: 0.7
+                                          - justify-self: start
+                                - type: entities
+                                  card_mod:
+                                    style: >-
+                                      ha-card { background: none !important;
+                                      box-shadow: none !important; border: none
+                                      !important; }
+                                  entities:
+                                    - entity: sensor.chi_bambu_ams_humidity
+                                      name: Humidity
+                                    - entity: sensor.chi_bambu_ams_drying
+                                      name: Drying
+                                - type: conditional
+                                  conditions:
+                                    - entity: sensor.chi_bambu_ams_drying
+                                      state: 'yes'
+                                  card:
+                                    type: entities
+                                    card_mod:
+                                      style: >-
+                                        ha-card { background: none !important;
+                                        box-shadow: none !important; border:
+                                        none !important; margin-top: -10px
+                                        !important; }
+                                    entities:
+                                      - entity: sensor.chi_bambu_ams_drying_time
+                                        name: Time Remaining
+                                      - entity: sensor.chi_bambu_ams_drying_heat
+                                        name: Drying Temp
+                            - type: custom:stack-in-card
+                              card_mod:
+                                style: |
+                                  ha-card {
+                                    box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
+                                    border: 1px solid rgba(128,128,128,0.2) !important;
+                                    border-radius: 12px !important;
+                                    background: rgba(120,120,120,0.05) !important;
+                                    margin: 4px !important;
+                                    padding: 8px !important;
+                                    min-height: 318px;
+                                  }
+                              cards:
+                                - type: markdown
+                                  content: '### Printing Info'
+                                  card_mod:
+                                    style: >-
+                                      ha-card { background: none !important;
+                                      box-shadow: none !important; border: none
+                                      !important; padding-bottom: 0 !important;
+                                      }
+                                - type: markdown
+                                  card_mod:
+                                    style: >-
+                                      ha-card { background: none !important;
+                                      box-shadow: none !important; border: none
+                                      !important; }
+                                  content: >-
+                                    **Status:** {{
+                                    states('sensor.chi_bambu_print_status') }}
+                                    ({{
+                                    states('sensor.chi_bambu_print_progress')
+                                    }}%)<br> **Layer:** {{
+                                    states('sensor.chi_bambu_current_layer') }}
+                                    / {{ states('sensor.chi_bambu_total_layers')
+                                    }}<br> **Nozzle:** {{
+                                    states('sensor.chi_bambu_nozzle_temp') }} /
+                                    {{
+                                    states('sensor.chi_bambu_target_nozzle_temp')
+                                    }}°C<br> **Bed:** {{
+                                    states('sensor.chi_bambu_bed_temp') }} / {{
+                                    states('sensor.chi_bambu_target_bed_temp')
+                                    }}°C<br> **Speed:** {{
+                                    states('sensor.chi_bambu_print_speed')
+                                    }}<br> **Remaining:** {{
+                                    states('sensor.chi_bambu_remaining_time_formatted')
+                                    }}
+                                - type: horizontal-stack
+                                  cards:
+                                    - type: gauge
+                                      entity: sensor.chi_bambu_part_fan_speed
+                                      name: Part
+                                      min: 0
+                                      max: 100
+                                    - type: gauge
+                                      entity: sensor.chi_bambu_aux_fan_speed
+                                      name: Aux
+                                      min: 0
+                                      max: 100
+                                    - type: gauge
+                                      entity: sensor.chi_bambu_chamber_fan_speed
+                                      name: Chamber
+                                      min: 0
+                                      max: 100
+                        - type: custom:stack-in-card
+                          card_mod:
+                            style: |
+                              ha-card {
+                                box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
+                                border: 1px solid rgba(128,128,128,0.2) !important;
+                                border-radius: 12px !important;
+                                background: rgba(120,120,120,0.05) !important;
+                                margin: 4px !important;
+                                padding: 8px !important;
+                              }
+                          cards:
+                            - type: markdown
+                              content: '### Controls'
+                              card_mod:
+                                style: >-
+                                  ha-card { background: none !important;
+                                  box-shadow: none !important; border: none
+                                  !important; padding-bottom: 0 !important; }
+                            - type: horizontal-stack
+                              cards:
+                                - type: custom:button-card
+                                  color_type: blank-card
+                                - type: custom:button-card
+                                  entity: sensor.chi_bambu_light_status
+                                  name: Light
+                                  show_state: false
+                                  state_color: false
+                                  triggers_update:
+                                    - sensor.chi_bambu_light_status
+                                  icon: |
+                                    [[[
+                                      var s = states['sensor.chi_bambu_light_status'];
+                                      return (s && s.state && s.state.toUpperCase() === 'ON')
+                                        ? 'mdi:lightbulb'
+                                        : 'mdi:lightbulb-outline';
+                                    ]]]
+                                  color: |
+                                    [[[
+                                      var s = states['sensor.chi_bambu_light_status'];
+                                      return (s && s.state && s.state.toUpperCase() === 'ON')
+                                        ? 'gold'
+                                        : '#44739e';
+                                    ]]]
+                                  tap_action:
+                                    action: call-service
+                                    service: button.press
+                                    target:
+                                      entity_id: button.bambu_toggle_light_and_sync
+                                  styles:
+                                    card:
+                                      - background: rgba(0,0,0,0.2) !important
+                                      - box-shadow: none !important
+                                      - border: none !important
+                                - type: button
+                                  name: Sync
+                                  icon: mdi:sync
+                                  tap_action:
+                                    action: call-service
+                                    service: rest_command.bambu_force_sync
+                                  card_mod:
+                                    style: |
+                                      ha-card { 
+                                        background: none !important; 
+                                        box-shadow: none !important; 
+                                        border: none !important; 
+                                      }
+                                - type: custom:button-card
+                                  color_type: blank-card
+                            - type: vertical-stack
+                              cards:
+                                - type: markdown
+                                  content: Screen Brightness
+                                  card_mod:
+                                    style: >
+                                      ha-card { background: none !important;
+                                      border: none !important; box-shadow: none
+                                      !important; padding: 0 0 0 12px
+                                      !important; margin-bottom: 0px !important;
+                                      font-size: 13px !important; font-weight:
+                                      bold !important; opacity: 0.8; }
+                                - type: horizontal-stack
+                                  cards:
+                                    - type: entities
+                                      card_mod:
+                                        style: |
+                                          :host {
+                                            flex: 0 1 auto !important;
+                                            min-width: 0 !important;
+                                            margin-right: 12px !important;
+                                          }
+                                          ha-card {
+                                            background: none !important;
+                                            border: none !important;
+                                            box-shadow: none !important;
+                                            padding: 0 !important;
+                                          }
+                                          .card-content {
+                                            padding: 0 !important;
+                                          }
+                                      entities:
+                                        - entity: input_number.bambu_screen_brightness
+                                          name: ' '
+                                          card_mod:
+                                            style:
+                                              hui-generic-entity-row $: >
+                                                .info { display: none !important; }
+
+                                                state-badge { display: none !important;
+                                                margin: 0 !important; }
+                                              $: |
+                                                .flex {
+                                                  margin-left: 0px !important;
+                                                  flex: 1 1 auto !important;
+                                                  width: 100% !important;
+                                                  display: flex !important;
+                                                  align-items: center !important;
+                                                }
+                                                ha-slider {
+                                                  max-width: none !important;
+                                                  width: 100% !important;
+                                                  min-width: 50px !important;
+                                                  flex: 1 1 auto !important;
+                                                }
+                                                .state {
+                                                  display: block !important;
+                                                  min-width: 45px !important;
+                                                  text-align: center !important;
+                                                  margin-left: 8px !important;
+                                                  background: rgba(128,128,128,0.15) !important;
+                                                  border: 1px solid rgba(128,128,128,0.3) !important;
+                                                  border-radius: 6px !important;
+                                                  padding: 4px 8px !important;
+                                                  font-weight: bold !important;
+                                                  white-space: nowrap !important;
+                                                }
+                                    - type: custom:button-card
+                                      name: UPDATE
+                                      tap_action:
+                                        action: call-service
+                                        service: script.bambu_send_brightness
+                                      card_mod:
+                                        style: |
+                                          :host {
+                                            flex: 0 0 65px !important;
+                                            align-self: center !important;
+                                          }
+                                      styles:
+                                        card:
+                                          - background: rgba(0,255,100,0.1) !important
+                                          - border: 1px solid rgba(0,255,100,0.3) !important
+                                          - border-radius: 50px !important
+                                          - height: 32px
+                                          - width: 65px
+                                          - padding: 0 !important
+                                        name:
+                                          - font-size: 9px
+                                          - font-weight: bold
+                                        grid:
+                                          - grid-template-areas: '"n"'
+                                          - grid-template-columns: 1fr
+                                          - grid-template-rows: 1fr
+                                          - justify-content: center
+                                          - align-items: center
+                                - type: markdown
+                                  content: Screen Timeout
+                                  card_mod:
+                                    style: >
+                                      ha-card { background: none !important;
+                                      border: none !important; box-shadow: none
+                                      !important; padding: 10px 0 0 12px
+                                      !important; margin-bottom: 0px !important;
+                                      font-size: 13px !important; font-weight:
+                                      bold !important; opacity: 0.8; }
+                                - type: horizontal-stack
+                                  cards:
+                                    - type: entities
+                                      card_mod:
+                                        style: |
+                                          :host {
+                                            flex: 0 1 auto !important;
+                                            min-width: 0 !important;
+                                            margin-right: 12px !important;
+                                          }
+                                          ha-card {
+                                            background: none !important;
+                                            border: none !important;
+                                            box-shadow: none !important;
+                                            padding: 0 !important;
+                                          }
+                                          .card-content {
+                                            padding: 0 !important;
+                                          }
+                                      entities:
+                                        - entity: input_number.bambu_screen_timeout
+                                          name: ' '
+                                          card_mod:
+                                            style:
+                                              hui-generic-entity-row $: >
+                                                .info { display: none !important; }
+
+                                                state-badge { display: none !important;
+                                                margin: 0 !important; }
+                                              $: |
+                                                .flex {
+                                                  margin-left: 0px !important;
+                                                  flex: 1 1 auto !important;
+                                                  width: 100% !important;
+                                                  display: flex !important;
+                                                  align-items: center !important;
+                                                }
+                                                ha-slider {
+                                                  max-width: none !important;
+                                                  width: 100% !important;
+                                                  min-width: 50px !important;
+                                                  flex: 1 1 auto !important;
+                                                }
+                                                .state {
+                                                  display: block !important;
+                                                  min-width: 45px !important;
+                                                  text-align: center !important;
+                                                  margin-left: 8px !important;
+                                                  background: rgba(128,128,128,0.15) !important;
+                                                  border: 1px solid rgba(128,128,128,0.3) !important;
+                                                  border-radius: 6px !important;
+                                                  padding: 4px 8px !important;
+                                                  font-weight: bold !important;
+                                                  white-space: nowrap !important;
+                                                }
+                                    - type: custom:button-card
+                                      name: UPDATE
+                                      tap_action:
+                                        action: call-service
+                                        service: script.bambu_send_timeout
+                                      card_mod:
+                                        style: |
+                                          :host {
+                                            flex: 0 0 65px !important;
+                                            align-self: center !important;
+                                          }
+                                      styles:
+                                        card:
+                                          - background: rgba(0,255,100,0.1) !important
+                                          - border: 1px solid rgba(0,255,100,0.3) !important
+                                          - border-radius: 50px !important
+                                          - height: 32px
+                                          - width: 65px
+                                          - padding: 0 !important
+                                        name:
+                                          - font-size: 9px
+                                          - font-weight: bold
+                                        grid:
+                                          - grid-template-areas: '"n"'
+                                          - grid-template-columns: 1fr
+                                          - grid-template-rows: 1fr
+                                          - justify-content: center
+                                          - align-items: center
+                        - type: entities
+                          card_mod:
+                            style: |
+                              ha-card {
+                                background: transparent !important;
+                                box-shadow: none !important;
+                                border: none !important;
+                                margin: 10px 4px 0px 4px !important;
+                              }
+                          entities:
+                            - type: section
+                              label: Account & Network
+                            - entity: sensor.chi_bambu_username
+                              name: Account
+                            - entity: sensor.chi_bambu_wifi_ssid
+                              name: WiFi SSID

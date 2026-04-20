@@ -3,3 +3,5 @@ add a nice little account page.
 update settings page to look better and be more segmented
 
 on the print monitor screen make the screen show a message when no print is in progress, will still show the stats tho
+
+integration made, however need to add authentiation to the requests with an api token or some sort to stop un authed requests

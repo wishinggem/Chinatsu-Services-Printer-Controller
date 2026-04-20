@@ -1,5 +1,6 @@
 #pragma once
 #include "Page.h"
+#include "Config.h"
 #include <vector>
 
 class PageManager {

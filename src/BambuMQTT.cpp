@@ -27,6 +27,7 @@ int amsRemain[4] = {-1, -1, -1, -1};
 String amsBrand[4] = {"", "", "", ""};
 int amsActiveTray = -1;
 bool dumpNextMqttPacket = false;
+String lastRawMqttMessage = "{}";
 
 HMSDictEntry getHMSEntry(String code) {
     String c = code;
@@ -140,7 +141,7 @@ HMSDictEntry getHMSEntry(String code) {
     if (c == "0500402B") return {"WiFi password", "Router connection failed due to incorrect password. Please check the password and try again."};
     if (c == "05004007") return {"Update required", "Print jobs are not allowed to be sent while force updating or when repair updating is required."};
     if (c == "05000500") return {"No MQTT Auth", "MQTT Command verification failed, please update Studio or Handy."};
-    
+    if (c == "07009700") return {"Chamber temperature of AMS A is relatively high; auxiliary feeding or RFID reading is not available currently."};
     return {"Unknown Error", "An unknown error occurred. Code: " + code};
 }
 
@@ -412,6 +413,12 @@ void BambuMQTT::callback(char* topic, byte* payload, unsigned int length) {
                 dumpNextMqttPacket = false;
             }
         }
+        
+        char* temp = new char[length + 1];
+        memcpy(temp, payload, length);
+        temp[length] = '\0';
+        lastRawMqttMessage = String(temp);
+        delete[] temp;
         
         globalMQTTInstance->_lastUpdateRx = millis();
         globalMQTTInstance->parseStatusPayload(payload, length);

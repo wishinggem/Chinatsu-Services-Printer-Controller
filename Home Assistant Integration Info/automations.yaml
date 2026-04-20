@@ -1,0 +1,26 @@
+- id: 'bambu_startup_sync'
+  alias: "Bambu Force Sync on Startup"
+  trigger:
+    - platform: homeassistant
+      event: start
+  action:
+    - service: rest_command.bambu_force_sync
+
+- id: 'bambu_sync_inputs_from_webhook'
+  alias: "Bambu Sync Inputs from Webhook"
+  trigger:
+    - platform: webhook
+      webhook_id: "bambu_controller_push"
+      local_only: true
+  action:
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.bambu_screen_brightness
+      data:
+        # Convert ESP32's 0-255 scale back into 0-100% for the UI
+        value: "{{ (trigger.json.parsed_data.device_info.screen_brightness | default(127, true) | float / 2.55) | round(0) | int }}"
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.bambu_screen_timeout
+      data:
+        value: "{{ trigger.json.parsed_data.device_info.screen_timeout | default(5, true) | int }}"

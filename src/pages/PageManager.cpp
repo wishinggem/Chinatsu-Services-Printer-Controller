@@ -8,18 +8,7 @@
 #include "PagePrintMonitor.h"
 #include "PageAMS.h" // Added since AMS needs to be referenced
 #include "PageOTA.h"
-
-#ifndef STATE_PRINT_MONITOR
-#define STATE_PRINT_MONITOR 11
-#endif
-
-#ifndef STATE_AMS_PAGE
-#define STATE_AMS_PAGE 12
-#endif
-
-#ifndef STATE_OTA_UPDATE
-#define STATE_OTA_UPDATE 13
-#endif
+#include "PageHomeAssistant.h"
 
 PageManager::PageManager(TFT_eSPI* tft, TAMC_GT911* touch) {
     _tft = tft;
@@ -110,6 +99,7 @@ void PageManager::switchPage(AppState newState) {
         case static_cast<AppState>(STATE_NOTIFICATIONS): _currentPage = new PageNotifications(_tft, _touch, this); break;
         case static_cast<AppState>(STATE_PRINT_MONITOR): _currentPage = new PagePrintMonitor(_tft, _touch, this); break;
         case static_cast<AppState>(STATE_OTA_UPDATE): _currentPage = new PageOTA(_tft, _touch, this); break;
+        case static_cast<AppState>(STATE_HOMEASSISTANT): _currentPage = new PageHomeAssistant(_tft, _touch, this); break;
     }
 
     if (_currentPage) {
@@ -136,6 +126,18 @@ void PageManager::closeKeyboard(bool save) {
     _kbActive = false;
     if (save && _kbTarget) {
         *_kbTarget = _kbBuffer;
+
+        // Hack to handle integer conversions from string keyboard
+        if (_currentPage && config.currentState == STATE_HOMEASSISTANT) {
+            // Check if the target was one of the integer fields
+            if (_kbTarget == &config.tempHaPort) {
+                config.haPort = _kbBuffer.toInt();
+            }
+            if (_kbTarget == &config.tempHaInterval) {
+                config.haSendInterval = _kbBuffer.toInt();
+            }
+        }
+
     }
     _tft->fillScreen(TFT_BLACK);
     if (_currentPage) _currentPage->onEnter();
